@@ -7,7 +7,8 @@
 https://docs.google.com/document/d/1FhTePeGKF_eliwZVOVYhPkLzxA7LKkHaVnGjR7xGlEQ/
 
 Исходники схем и прочих файлов предствлены в папке [docs](./docs)
-
+## Распределение  
+[Тык](https://docs.google.com/spreadsheets/d/1m7NvXKFVwbzvFyYMQQWDVQqnsg1w64sfQ3BdbcYpw-Y/edit?userstoinvite=vova.l.2001%40gmail.com&ts=5eb5a58b&actionButton=1#gid=0)
 ## Участники
 * **Ковалева Дарья** - ментор
 * **Ларин Владимир** - тимлид
