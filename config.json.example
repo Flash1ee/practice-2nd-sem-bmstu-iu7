@@ -1,9 +1,0 @@
-{
-    "debug": true,
-    "bot": {
-        "token": ""
-    },
-    "database": {
-        "url": ""
-    }
-}
