@@ -1,0 +1,11 @@
+# IDES
+.idea
+.vscode
+
+# temp files
+__pycache__
+venv
+lib
+
+# config
+config.json
