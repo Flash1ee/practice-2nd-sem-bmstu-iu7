@@ -16,7 +16,7 @@ apihelper.proxy = cfg['proxy']
 def create_superuser(message):
     pass
 
-@bot.message_handler()
+@bot.message_handler(content_types=["text"])
 def handle_message(message):
     print(message.text)
     bot.send_message(message.chat.id, message.text)
