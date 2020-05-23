@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Column, Integer, String, DateTime
+from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -15,12 +15,11 @@ class Role(Base):
     users = relationship('User', order_by='User.role_id', back_populates='role')
     tokens = relationship('Token', order_by='Token.role_id', back_populates='role')
 
-
 class User(Base):
     __tablename__  = 'users'
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
-    conversation = Column(Integer)
+    conversation = Column(BigInteger, primary_key=True)
     role_id = Column(Integer, ForeignKey('roles.id'))
     
     # Relationship
