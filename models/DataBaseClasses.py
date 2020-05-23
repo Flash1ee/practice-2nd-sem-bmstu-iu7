@@ -1,9 +1,11 @@
 from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from datetime import datetime, timezone, timedelta
 
 Base = declarative_base()
 
+offset = timezone(timedelta(hours=3))
 
 class Role(Base):
     __tablename__ = 'roles'
@@ -18,8 +20,8 @@ class Role(Base):
 class User(Base):
     __tablename__  = 'users'
     id = Column(Integer, primary_key=True)
+    conversation = Column(BigInteger, index=True)
     name = Column(String(20))
-    conversation = Column(BigInteger, primary_key=True)
     role_id = Column(Integer, ForeignKey('roles.id'))
     
     # Relationship
@@ -28,6 +30,21 @@ class User(Base):
     ticket_manager = relationship('Ticket', order_by='Ticket.manager_id', back_populates='manager', foreign_keys='Ticket.manager_id')
     ticket_client = relationship('Ticket', order_by='Ticket.client_id', back_populates='client', foreign_keys='Ticket.client_id')
     message = relationship('Message', order_by='Message.sender_id', back_populates='sender')
+    
+    def get_active_tickets(self, session):
+        tickets = []
+        if self.role_id == 1:
+            tickets = [[t.id, t.manager_id, t.client_id, t.title, t.start_date] 
+                for t in session.query(Ticket) if t.close_date == None]
+        elif self.role_id == 2:
+            tickets = [[t.id, t.manager_id, t.client_id, t.title, t.start_date] 
+                for t in session.query(Ticket).filter(Ticket.manager_id == self.id) if t.close_date == None]
+        elif self.role_id == 3:
+            tickets = [[t.id, t.manager_id, t.client_id, t.title, t.start_date] 
+                for t in session.query(Ticket).filter(Ticket.client_id == self.id) if t.close_date == None]
+        else:
+            print("Invalid user")
+        return tickets
 
 
 class Ticket(Base):
@@ -37,7 +54,7 @@ class Ticket(Base):
     manager_id = Column(Integer, ForeignKey('users.id'))
     client_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String(50))
-    start_date = Column(DateTime)
+    start_date = Column(DateTime, default=datetime.now(offset))
     close_date = Column(DateTime)
 
     # Relationship
