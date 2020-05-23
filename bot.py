@@ -19,6 +19,7 @@ def create_superuser(message):
 @bot.message_handler()
 def handle_message(message):
     print(message.text)
+    bot.send_message(message.chat.id, message.text)
 
 @bot.message_handler(commands = "manager create")
 def create_manager(message):
