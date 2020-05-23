@@ -5,6 +5,7 @@
 # temp files
 __pycache__
 venv
+env
 lib
 
 # config
