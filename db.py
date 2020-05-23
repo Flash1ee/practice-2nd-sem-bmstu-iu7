@@ -43,8 +43,8 @@ session = Session()
 # # session.add(test_message)
 # session.add(blocked)
 
-print(User.get_by_conversation(session, 13))
-print(type(User.get_by_conversation(session, 13)))
+# print(User.get_by_conversation(session, 13))
+# print(type(User.get_by_conversation(session, 13)))
 
 
 # managers = User.get_all_managers(session)
@@ -82,7 +82,9 @@ print(type(User.get_by_conversation(session, 13)))
 
 # print(User.get_by_id(session, 2))
 
-
+dema = User.find_by_name(session, 'Demasek')[0]
+tickets = dema.get_active_tickets(session)
+print("All tickets: ", tickets)
 
 # for us in User.get_by_name(session, 'Demasek'):
 #     print(f'ANSWER: {us}')
