@@ -1,6 +1,9 @@
-from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, BigInteger
+from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, BigInteger, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from datetime import datetime, timezone, timedelta
+
+offset = timezone(timedelta(hours=3))
 
 Base = declarative_base()
 
@@ -15,11 +18,23 @@ class Role(Base):
     users = relationship('User', order_by='User.role_id', back_populates='role')
     tokens = relationship('Token', order_by='Token.role_id', back_populates='role')
 
+    def init_roles(session):
+        if (not len(session.query(Role).all())):
+            print("Hello")
+            session.add_all([
+                Role(name='Admin'),
+                Role(name='Manager'),
+                Role(name='Client')
+            ])
+            session.commit()
+
+
 class User(Base):
     __tablename__  = 'users'
-    id = Column(Integer, primary_key=True)
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    conversation = Column(BigInteger, index=True)
     name = Column(String(20))
-    conversation = Column(BigInteger, primary_key=True)
     role_id = Column(Integer, ForeignKey('roles.id'))
     
     # Relationship
@@ -29,6 +44,37 @@ class User(Base):
     ticket_client = relationship('Ticket', order_by='Ticket.client_id', back_populates='client', foreign_keys='Ticket.client_id')
     message = relationship('Message', order_by='Message.sender_id', back_populates='sender')
 
+    def __repr__(self):
+        return f'id: {self.id}; Name: {self.name}; Role: {self.role_id}\n'
+
+    def get_all_administrators(session) ->list:
+        return session.query(User).filter(User.role_id == 1).all()
+
+    def get_all_managers(session) ->list:
+        return session.query(User).filter(User.role_id == 2).all()
+
+    def get_all_clients(session) ->list:
+        return session.query(User).filter(User.role_id == 3).all()
+
+    def add(session, users: list) ->None:
+        '''
+        param session: current session,
+        param user: [ (conversation, name, role_id), ...]
+        '''
+        for user in users:
+            session.add(User(conversation=user[0], name=user[1], role_id=user[2]))
+        session.commit()
+
+    def get_by_id(session, id: int) ->'User':
+        return session.query(User).get(id)
+
+    def get_by_name(session, name: str) ->list:
+        return session.query(User).filter(User.name == name).all()
+
+    def get_by_conversation(session, convers: str) -> 'User':
+        return session.query(User).filter(User.conversation == convers)[0]
+    
+
 
 class Ticket(Base):
     __tablename__ = 'tickets'
@@ -37,7 +83,7 @@ class Ticket(Base):
     manager_id = Column(Integer, ForeignKey('users.id'))
     client_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String(50))
-    start_date = Column(DateTime)
+    start_date = Column(DateTime, default=datetime.now(offset))
     close_date = Column(DateTime)
 
     # Relationship
@@ -66,7 +112,7 @@ class Message(Base):
     id = Column(Integer, primary_key=True)
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     sender_id = Column(Integer, ForeignKey('users.id'))
-    body = Column(String(500))
+    body = Column(Text)
     date = Column(DateTime)
 
     # Relationship
