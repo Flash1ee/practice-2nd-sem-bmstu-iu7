@@ -30,21 +30,23 @@ class User(Base):
     ticket_manager = relationship('Ticket', order_by='Ticket.manager_id', back_populates='manager', foreign_keys='Ticket.manager_id')
     ticket_client = relationship('Ticket', order_by='Ticket.client_id', back_populates='client', foreign_keys='Ticket.client_id')
     message = relationship('Message', order_by='Message.sender_id', back_populates='sender')
-    
+
     def get_active_tickets(self, session):
         tickets = []
         if self.role_id == 1:
-            tickets = [[t.id, t.manager_id, t.client_id, t.title, t.start_date] 
-                for t in session.query(Ticket) if t.close_date == None]
+            tickets = session.query(Ticket).filter(Ticket.close_date == None).all()
         elif self.role_id == 2:
-            tickets = [[t.id, t.manager_id, t.client_id, t.title, t.start_date] 
-                for t in session.query(Ticket).filter(Ticket.manager_id == self.id) if t.close_date == None]
+            tickets = session.query(Ticket).filter(Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
         elif self.role_id == 3:
-            tickets = [[t.id, t.manager_id, t.client_id, t.title, t.start_date] 
-                for t in session.query(Ticket).filter(Ticket.client_id == self.id) if t.close_date == None]
+            tickets = session.query(Ticket).filter(Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
         else:
             print("Invalid user")
         return tickets
+
+    # Для теста, пока возвращаем всех менеджеров
+    @staticmethod
+    def get_free_managers(session):
+        return session.query(User).filter(User.role_id == 2)
 
 
 class Ticket(Base):
@@ -63,6 +65,44 @@ class Ticket(Base):
 
     isblocked = relationship('BlockedTicket', order_by='BlockedTicket.ticket_id', back_populates='ticket')
     message = relationship('Message', order_by='Message.ticket_id', back_populates='ticket')
+
+    def appoint_to_manager(self, session, new_manager_id):
+        manager = session.query(User).get(new_manager_id)
+        if manager != None and manager.role_id == 2:
+            self.manager_id = new_manager_id
+            return 0
+        else:
+            print("Manager not found")
+            return 1
+
+    def add(self, session, manager_id):
+        if self.appoint_to_manager(session, manager_id) == 0:
+            session.add(self)
+            session.commit()
+        else:
+            print("Couldn't add the ticket")
+
+    def get_all_messages(self, session):
+        return session.query(Message).filter(Message.ticket_id == self.id).all()
+
+    def put_refuse_data(self, session, reason):
+        new_blocked = BlockedTicket(ticket_id=self.id, manager_id=self.manager_id, reason=reason)
+        session.add(new_blocked)
+        session.commit()
+
+    def reappoint(self, session, refused_list):
+        new_managers = User.get_free_managers(session)
+        for man in new_managers:
+            if man not in refused_list:
+                self.appoint_to_manager(session, man.id)
+                session.commit()
+                return
+        self.appoint_to_manager(session, new_managers[0].id)
+        session.commit()
+
+    def close(self, session):
+        self.close_date = datetime.now(offset)
+        session.commit()
 
 
 class BlockedTicket(Base):
@@ -84,7 +124,7 @@ class Message(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     sender_id = Column(Integer, ForeignKey('users.id'))
     body = Column(String(500))
-    date = Column(DateTime)
+    date = Column(DateTime, default=datetime.now(offset))
 
     # Relationship
     ticket = relationship('Ticket', back_populates='message')
