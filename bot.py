@@ -3,8 +3,7 @@ import json
 
 #cfg = json.load(open("config.json"))
 
-#token = cfg['bot']['token']
-token = "1294070875:AAH2shJQJLXvvcVX5IFWKg1JCusm0mI7Wv8"
+token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 class States():
     START = "0"
