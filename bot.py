@@ -1,7 +1,7 @@
 import telebot
 import json
 
-#cfg = json.load(open("config.json"))
+cfg = json.load(open("config.json"))
 
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
