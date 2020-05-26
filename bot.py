@@ -1,5 +1,10 @@
 import telebot
 import json
+from db import session
+from DataBaseClasses import User, Token
+import string 
+import random
+import datetime
 
 cfg = json.load(open("config.json"))
 
@@ -9,6 +14,9 @@ class States():
     START = "0"
     COMMANDS = "1"
     PROCESS = "2"
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
 from telebot import apihelper
@@ -35,7 +43,15 @@ def handle_message(message):
 
 @bot.message_handler(commands = ["manager create"])
 def create_manager(message):
-    pass
+    token = id_generator()
+    bot.send_message(message.chat.id, token)
+    time = datetime.datetime.today().strftime("%d.%m.%Y")
+    new_token = Token(value = token, role_id = 1, expires_date = time)
+    session.add(new_token)
+    bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+
+
+
 
 @bot.message_handler(commands = ["admin create"])
 def create_admin(message):
@@ -43,11 +59,21 @@ def create_admin(message):
 @bot.message_handler(commands = ["manager remove"])
 def manager_remove(message):
     pass
+
+
 @bot.message_handler(commands = ["manager list"])
 def get_manager_list(message):
-    pass
+    managers = User.get_all_managers(session)
+    if not managers:
+        bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
+            "/manager create")
+    else:
+        bot.send_message(message.chat.id, "\n".join(managers))
+    
+
+
 @bot.message_handler(commands = ["ticket list"])
-def get_ticket_list(message):
+def active_ticket_list(message):
     pass
 @bot.message_handler(commands = ["ticket"])
 def ticket_info(message):
