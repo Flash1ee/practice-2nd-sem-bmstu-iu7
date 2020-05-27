@@ -5,89 +5,74 @@ from DataBaseClasses import User, Token
 import string 
 import random
 import datetime
+from telebot import apihelper
+from telebot import types
 
 cfg = json.load(open("config.json"))
 
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
-class States():
-    START = "0"
-    COMMANDS = "1"
-    PROCESS = "2"
 
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
+class State():
+    start = 0
+    add_ticket = 0
+    ask_question = 0
 
+def generate_ticket(length = 6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for i in range(length))
 
-from telebot import apihelper
-from telebot import types
+def create_keyboard():
+    keyboard = types.InlineKeyboardMarkup(row_width = 3)
+    key1 = types.InlineKeyboardButton(text = "Client", callback_data = "Client")
+    key2 = types.InlineKeyboardButton(text = "Manager", callback_data = "Manager")
+    key3 = types.InlineKeyboardButton(text = "Admin", callback_data = "Admin") 
+    keyboard.add(key1, key2, key3)
+    return keyboard
+
+@bot.callback_query_handler(func = lambda x: True)
+def callback_handler(callback_query):
+    message = callback_query.message
+    text = callback_query.data
+    if text == "Client":
+        bot.send_message(message.chat.id, 'Вы зарегистрированы в системе как клиент.')
+        bot.send_message(message.chat.id, 'Для дальнейшей работы воспользуйтесь командой /ticket_add.')
+    if text == "Manager":
+        bot.send_message(message.chat.id, 'Вы зарегистрированы в системе как менеджер.')
+    if text == "Admin":
+        bot.send_message(message.chat.id, 'Вы зарегистрированы в системе как администратор.')
+    State.start = 1
+    State.add_ticket = 0
+    State.ask_question = 0
+
 @bot.message_handler(commands = ["start"])
-def keyboard(message):
-    keyboard = types.ReplyKeyboardMarkup(row_width = 1)
-    itembtn1 = types.KeyboardButton('Admin')
-    itembtn2 = types.KeyboardButton('Manager')
-    itembtn3 = types.KeyboardButton("Client")
-    keyboard.add(itembtn1, itembtn2, itembtn3)
-    bot.send_message(message.chat.id, "Выберите свой статус.", reply_markup=keyboard)
+def start_message(message):
+    keyboard = create_keyboard()
+    bot.send_message(message.chat.id, "Выберите свой статус:", reply_markup=keyboard)
 
-#apihelper.proxy = cfg['proxy']
-
-@bot.message_handler(commands = ["superuser init"])
-def create_superuser(message):
-    pass
-
-@bot.message_handler(content_types=["text"])
-def handle_message(message):
-    print(message.text)
-    bot.send_message(message.chat.id, message.text)
-
-@bot.message_handler(commands = ["manager create"])
-def create_manager(message):
-    token = id_generator()
-    bot.send_message(message.chat.id, token)
-    time = datetime.datetime.today().strftime("%d.%m.%Y")
-    new_token = Token(value = token, role_id = 1, expires_date = time)
-    session.add(new_token)
-    bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
-
-
-
-
-@bot.message_handler(commands = ["admin create"])
-def create_admin(message):
-    pass
-@bot.message_handler(commands = ["manager remove"])
-def manager_remove(message):
-    pass
-
-
-@bot.message_handler(commands = ["manager list"])
-def get_manager_list(message):
-    managers = User.get_all_managers(session)
-    if not managers:
-        bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
-            "/manager create")
-    else:
-        bot.send_message(message.chat.id, "\n".join(managers))
+#def get_updates():
+    #r = requests.get(MAIN_URL + token + "/getUpdates" + "?offset = -10")
+    #print(r.json())
     
-
-
-@bot.message_handler(commands = ["ticket list"])
-def active_ticket_list(message):
-    pass
-@bot.message_handler(commands = ["ticket"])
-def ticket_info(message):
-    pass
-@bot.message_handler(commands = ["ticket close"])
-def close_ticket(message):
-    pass
-
-@bot.message_handler(commands = ["cancel"])
-def cancel_operation(message):
-    pass
-
-@bot.message_handler(commands = ["confirm"])
-def confirm_operation(message):
-    pass
+@bot.message_handler(commands = ["ticket_add"])
+def create_ticket(message):
+    ticket = generate_ticket()
+    if State.start == 0:
+        bot.send_message(message.chat.id, "Для того, чтобы задать вопрос, создайте тикет с помощью команды /start")
+    else:
+        State.add_ticket = 1
+        bot.send_message(message.chat.id, "Опишите Ваш вопрос:")
+        
+@bot.message_handler(content_types=['text'])
+@bot.edited_message_handler(content_types = ['text'])
+def handle_message(message):
+    if State.start == 0:
+        bot.send_message(message.chat.id, "Для начала работы воспользуйтесь командой /start.")
+    elif State.add_ticket == 0:
+        bot.send_message(message.chat.id, "Для того, чтобы задать вопрос, создайте тикет с помощью команды /start")
+    elif State.ask_question == 0:
+        State.ask_question = 1
+        bot.send_message(message.chat.id, "Ваш вопрос: \n" + message.text)
+    else:
+        bot.send_message(message.chat.id, "Echo")
 
 bot.polling(none_stop=True)
