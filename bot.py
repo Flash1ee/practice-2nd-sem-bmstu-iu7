@@ -34,6 +34,7 @@ def callback_handler(callback_query):
     message = callback_query.message
     text = callback_query.data
     if text == "Client":
+        #Ticket.client_id = message.chat.id
         bot.send_message(message.chat.id, 'Вы зарегистрированы в системе как клиент.')
         bot.send_message(message.chat.id, 'Для дальнейшей работы воспользуйтесь командой /ticket_add.')
     if text == "Manager":
@@ -65,6 +66,7 @@ def create_ticket(message):
 @bot.message_handler(content_types=['text'])
 @bot.edited_message_handler(content_types = ['text'])
 def handle_message(message):
+    #тест, надо брать из бд
     if State.start == False:
         bot.send_message(message.chat.id, "Для начала работы воспользуйтесь командой /start.")
     elif State.add_ticket == False:
