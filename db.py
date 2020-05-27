@@ -1,21 +1,122 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import exists
 import json
 import pymysql
+from pprint import pprint
 
 
-from models.DataBaseClasses import Role, BlockedTicket, Token, Message, User, Ticket, Base
+from models.DataBaseClasses import *
 
 
 pymysql.install_as_MySQLdb()
 
 config = json.load(open("./config.json"))
-engine = create_engine(config['database']['url'], echo=False)
+engine = create_engine(config['database']['url'], echo=True)
 Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 session = Session()
+
+
+# session.add_all([
+#     Ticket(manager_id=3, client_id=7, title='Ticket3'),
+#     Ticket(manager_id=3, client_id=6, title='Ticket2'),
+#     Ticket(manager_id=4, client_id=8, title='Ticket4'),
+#     Ticket(manager_id=4, client_id=9, title='Ticket5'),
+#     Ticket(manager_id=4, client_id=10, title='Ticket6'),
+#     Ticket(manager_id=5, client_id=6, title='Ticket7'),
+#     Ticket(manager_id=5, client_id=7, title='Ticket8'),
+#     Ticket(manager_id=5, client_id=8, title='Ticket9'),
+#     Ticket(manager_id=3, client_id=9, title='Ticket10'),
+#     Ticket(manager_id=3, client_id=10, title='Ticket11'),
+#     Ticket(manager_id=3, client_id=6, title='Ticket12'),
+#     Ticket(manager_id=4, client_id=7, title='Ticket13'),
+#     Ticket(manager_id=4, client_id=8, title='Ticket14'),
+#     Ticket(manager_id=5, client_id=7, title='Ticket14')
+#     ])
+
+# session.add_all([
+#     Message(ticket_id=1, sender_id=7),
+#     Message(ticket_id=1, sender_id=3),
+#     Message(ticket_id=2, sender_id=6),
+#     Message(ticket_id=2, sender_id=3),
+#     Message(ticket_id=3, sender_id=8),
+#     Message(ticket_id=3, sender_id=4),
+#     Message(ticket_id=4, sender_id=9),
+#     Message(ticket_id=4, sender_id=4),
+#     Message(ticket_id=5, sender_id=10),
+#     Message(ticket_id=5, sender_id=4),
+#     Message(ticket_id=6, sender_id=6),
+#     Message(ticket_id=7, sender_id=7),
+#     Message(ticket_id=8, sender_id=8),
+#     Message(ticket_id=9, sender_id=9),
+#     Message(ticket_id=10, sender_id=10),
+#     Message(ticket_id=11, sender_id=6),
+#     Message(ticket_id=12, sender_id=7),
+#     Message(ticket_id=13, sender_id=8),
+#     Message(ticket_id=14, sender_id=7)
+# ])
+
+
+
+# ticket1 = session.query(Ticket).get(1)
+# ticket1.close_date = datetime.now(offset)
+
+# ticket2 = session.query(Ticket).get(2)
+# ticket2.close_date = datetime.now(offset)
+
+# ticket3 = session.query(Ticket).get(3)
+# ticket3.close_date = datetime.now(offset)
+# session.commit()
+
+session.add(Message(ticket_id=12, sender_id=3))
+session.commit()
+
+user = User.find_by_id(session, 3)
+
+tickets1 = user.get_active_tickets(session)
+tickets2 = User.get_unprocessed_tickets(session, user.id)
+
+# # print(type(tickets2))
+
+for ticket in tickets1:
+    print(f'Title: {ticket.title}, Close_date: {ticket.close_date}')
+
+print('')
+
+# print(tickets2)
+
+for ticket in tickets2:
+    pprint(ticket.__dict__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# User.add_several(session, [
+#     (101, 'test_admin1', RoleNames.ADMIN.value),
+#     (102, 'test_admin2', RoleNames.ADMIN.value),[]
+#     (201, 'Manager1', RoleNames.MANAGER.value),
+#     (202, 'Manager2', RoleNames.MANAGER.value),
+#     (203, 'Manager3', RoleNames.MANAGER.value),
+#     (301, 'Client1', RoleNames.CLIENT.value),
+#     (302, 'Client2', RoleNames.CLIENT.value),
+#     (303, 'Client3', RoleNames.CLIENT.value),
+#     (304, 'Client4', RoleNames.CLIENT.value),
+#     (305, 'Client5', RoleNames.CLIENT.value),
+#     (401, 'Blocked1', RoleNames.BLOCKED_USER.value)
+# ])
+
+
 
 
 # manager_vladimir = User(name='Vladimir_manager', conversation=597, role_id=1)
@@ -66,7 +167,7 @@ session = Session()
 # User.add_user(session,'Kolyasek', 592, 3)
 
 
-# User.add(session, [
+# User.add_several(session, [
 #     (13, 'Demasek', 1),
 #     (14, 'Dema', 2),
 #     (12, 'Debil', 3),
@@ -82,9 +183,9 @@ session = Session()
 
 # print(User.get_by_id(session, 2))
 
-dema = User.find_by_name(session, 'Demasek')[0]
-tickets = dema.get_active_tickets(session)
-print("All tickets: ", tickets)
+# dema = User.find_by_name(session, 'Demasek')[0]
+# tickets = dema.get_active_tickets(session)
+# print("All tickets: ", tickets)
 
 # for us in User.get_by_name(session, 'Demasek'):
 #     print(f'ANSWER: {us}')
