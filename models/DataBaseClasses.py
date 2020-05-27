@@ -1,18 +1,30 @@
-from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, BigInteger, Text
+from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Text
+from sqlalchemy import ForeignKey, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import except_
 from datetime import datetime, timezone, timedelta
+from enum import Enum
+from pprint import pprint
+from sqlalchemy.sql import func
 
 offset = timezone(timedelta(hours=3))
 
 Base = declarative_base()
 
 
+class RoleNames(Enum):
+    ADMIN = 1
+    MANAGER = 2
+    CLIENT = 3
+    BLOCKED_USER = 4
+
+
 class Role(Base):
     __tablename__ = 'roles'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(10))
+    name = Column(String(12), unique=True)
 
     # Relationship
     users = relationship('User', order_by='User.role_id',
@@ -22,13 +34,17 @@ class Role(Base):
 
     @staticmethod
     def init_roles(session):
+        '''
+        Проводится только один раз - сразу после создания таблицы '__roles__'.
+        Автокоммит - да.
+        В случае повторной инициализации - no effect.
+        '''
         if (not len(session.query(Role).all())):
-            print("Hello")
             session.add_all([
                 Role(name='Admin'),
                 Role(name='Manager'),
-                Role(name='Client')
-            ])
+                Role(name='Client'),
+                Role(name='BlockedUser')])
             session.commit()
 
 
@@ -38,7 +54,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation = Column(BigInteger, index=True)
     name = Column(String(20))
-    role_id = Column(Integer, ForeignKey('roles.id'))
+    role_id = Column(Integer, ForeignKey('roles.id'), nullable=False)
 
     # Relationship
     role = relationship('Role', back_populates='users')
@@ -47,7 +63,7 @@ class User(Base):
                                   back_populates='manager', foreign_keys='Ticket.manager_id')
     ticket_client = relationship('Ticket', order_by='Ticket.client_id',
                                  back_populates='client', foreign_keys='Ticket.client_id')
-    message = relationship(
+    messages = relationship(
         'Message', order_by='Message.sender_id', back_populates='sender')
 
     # Default methods
@@ -58,10 +74,26 @@ class User(Base):
     # Instance methods
 
     def get_active_tickets(self, session) -> list:
-        return session.query(Ticket).filter(Ticket.manager_id == self.id
-                                            and Ticket.close_date is None).all()
+        '''
+        Метод объекта класса User, который возвращает список активных тикетов.
+        Для администратора возвращает все активные тикеты всех менеджеров (сортировка: Ticket.manager_id)
+        Для менеджера возврашает все активные тикеты данного менеджера (сортировка: Ticket.start_date)
+        Для клиента возвращает ве активные тикета данного клиента (сортировка: Ticket.start_date)
+        '''
+        if self.role_id == RoleNames.ADMIN.value:
+            ans = session.query(Ticket).filter(
+                Ticket.close_date.is_(None)).order_by(Ticket.manager_id).all()
+        elif self.role_id == RoleNames.MANAGER.value:
+            ans = session.query(Ticket).filter(Ticket.manager_id == self.id).filter(
+                Ticket.close_date.is_(None)).order_by(Ticket.start_date).all()
+        elif self.role_id == RoleNames.CLIENT.value:
+            ans = session.query(Ticket).filter(Ticket.close_date.is_(None)).filter(
+                Ticket.client_id == self.id).order_by(Ticket.start_date).all()
+
+        return ans
 
     def appoint(self, session, role_id) -> None:
+        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value '''
         self.role_id = role_id
         session.commit()
 
@@ -72,13 +104,12 @@ class User(Base):
             new_manager = User.get_free_manager(session)
             ticket.appoint_to_manager(session, new_manager.id)
 
-        self.role_id = 3
+        self.role_id = RoleNames.CLIENT.value
         session.commit()
 
     def add(self, session) -> None:
         session.add(self)
         session.commit()
-
 
     # Static methods
 
@@ -87,6 +118,7 @@ class User(Base):
         '''
         param session: current session,
         param user: [ (conversation, name, role_id), ...]
+        role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
         '''
         for user in users:
             session.add(
@@ -94,16 +126,9 @@ class User(Base):
         session.commit()
 
     @staticmethod
-    def get_all_administrators(session) -> list:
-        return session.query(User).filter(User.role_id == 1).all()
-
-    @staticmethod
-    def get_all_managers(session) -> list:
-        return session.query(User).filter(User.role_id == 2).all()
-
-    @staticmethod
-    def get_all_clients(session) -> list:
-        return session.query(User).filter(User.role_id == 3).all()
+    def get_all_users_with_role(session, role_id) -> list:
+        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value '''
+        return session.query(User).filter(User.role_id == role_id).all()
 
     @staticmethod
     def find_by_id(session, id: int) -> 'User':
@@ -117,15 +142,35 @@ class User(Base):
     def find_by_conversation(session, conversation: str) -> 'User':
         return session.query(User).filter(User.conversation == conversation)[0]
 
-    '''TODO : Доделать, разобравшись с Messages...'''
-    @staticmethod
+    # TODO: UNTESTED
+    @ staticmethod
     def get_free_manager(session) -> 'User':
-        managers = User.get_all_managers(session)
+        all_managers = User.get_all_users_with_role(
+            session, RoleNames.MANAGER.value)
         managers_factor = []
-        for manager in managers:
-            num_of_open_tickets = len(manager.get_active_tickets(session))
 
-            num_of_unproc_messages = len(Message)
+        for manager in all_managers:
+            active_tickets = manager.get_active_tickets(session)
+            unprocessed_tickets = Ticket.get_unprocessed_tickets(
+                session, manager.id)
+            lastWeekCloseTickets = Ticket.get_closed_tickets_by_time(
+                session, manager_id, 7)
+            lastWeekBlockedTickets = Ticket.blocked_tickets_by_time(
+                session, manager_id, 7)
+
+            k1 = len(unprocessed_tickets)
+            k2 = len(active_tickets)
+            k3 = len(lastWeekCloseTicket) / 7
+            k4 = len(lastWeekBlockedTicket) / 7
+            
+            q1, q2, q3, q4 = 2, 1, 1, -1
+
+            coef = k1 ** q1 + k2 ** q2 + k3 ** q3 + k4 ** q4
+
+            managers_factor.append(coef)
+
+        index = managers_factor.index(min(managers_factor))
+        return all_managers[index]
 
 
 class Ticket(Base):
@@ -140,20 +185,36 @@ class Ticket(Base):
 
     # Relationship
     client = relationship('User', foreign_keys=[
-                          client_id], back_populates='ticket_client')
+        client_id], back_populates='ticket_client')
     manager = relationship('User', foreign_keys=[
-                           manager_id], back_populates='ticket_manager')
+        manager_id], back_populates='ticket_manager')
 
     isblocked = relationship(
         'BlockedTicket', order_by='BlockedTicket.ticket_id', back_populates='ticket')
-    message = relationship(
+    messages = relationship(
         'Message', order_by='Message.ticket_id', back_populates='ticket')
 
     def __repr__(self):
         return f'Title: {self.title}, manager_id={self.manager_id}'
 
-    def appoint_to_manager(self, session, manager_id)
-    pass
+    def appoint_to_manager(self, session, manager_id):
+        pass
+
+        # TODO
+    # https://stackoverflow.com/questions/45775724/sqlalchemy-group-by-and-return-max-date
+    # http://old.code.mu/sql/group-by.html
+    # http://quabr.com:8182/58620448/sqlalchemy-how-to-use-group-by-correctly-only-full-group-by
+    # https://stackoverflow.com/questions/34115174/error-related-to-only-full-group-by-when-executing-a-query-in-mysql
+    @staticmethod
+    def get_unprocessed_tickets(session, manager_id) -> list:
+        joined = session.query(Ticket).join(Ticket.messages)
+
+        maxdate = func.max(Message.date).label('maxdate')
+
+        all_open_tickets = joined.filter(Ticket.close_date.is_(None)).filter(
+            Ticket.manager_id == manager_id)
+
+        return 'TODO'
 
 
 class BlockedTicket(Base):
@@ -178,11 +239,13 @@ class Message(Base):
     date = Column(DateTime)
 
     # Relationship
-    ticket = relationship('Ticket', back_populates='message')
-    sender = relationship('User', back_populates='message')
+    ticket = relationship('Ticket', back_populates='messages')
+    sender = relationship('User', back_populates='messages')
 
-    def get_unprocessed_messages(session, manager_id: int):
-        pass
+    @ staticmethod
+    def get(session, ticket_id: int, user_id: int):
+        '''Получить список все сообщений user_id в данном тикете'''
+        return session.query(Message).filter(Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
 
 
 class Token(Base):
