@@ -14,9 +14,9 @@ token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
 class State():
-    start = 0
-    add_ticket = 0
-    ask_question = 0
+    start = False
+    add_ticket = False
+    ask_question = False
 
 def generate_ticket(length = 6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for i in range(length))
@@ -40,9 +40,9 @@ def callback_handler(callback_query):
         bot.send_message(message.chat.id, 'Вы зарегистрированы в системе как менеджер.')
     if text == "Admin":
         bot.send_message(message.chat.id, 'Вы зарегистрированы в системе как администратор.')
-    State.start = 1
-    State.add_ticket = 0
-    State.ask_question = 0
+    State.start = True
+    State.add_ticket = False
+    State.ask_question = False
 
 @bot.message_handler(commands = ["start"])
 def start_message(message):
@@ -50,27 +50,27 @@ def start_message(message):
     bot.send_message(message.chat.id, "Выберите свой статус:", reply_markup=keyboard)
 
 #def get_updates():
-    #r = requests.get(MAIN_URL + token + "/getUpdates" + "?offset = -10")
+    #r = requests.get(MAIN_URL + token + "/getUpdates" + "?offset=-10")
     #print(r.json())
     
 @bot.message_handler(commands = ["ticket_add"])
 def create_ticket(message):
     ticket = generate_ticket()
-    if State.start == 0:
+    if State.start == False:
         bot.send_message(message.chat.id, "Для того, чтобы задать вопрос, создайте тикет с помощью команды /start")
     else:
-        State.add_ticket = 1
+        State.add_ticket = True
         bot.send_message(message.chat.id, "Опишите Ваш вопрос:")
         
 @bot.message_handler(content_types=['text'])
 @bot.edited_message_handler(content_types = ['text'])
 def handle_message(message):
-    if State.start == 0:
+    if State.start == False:
         bot.send_message(message.chat.id, "Для начала работы воспользуйтесь командой /start.")
-    elif State.add_ticket == 0:
+    elif State.add_ticket == False:
         bot.send_message(message.chat.id, "Для того, чтобы задать вопрос, создайте тикет с помощью команды /start")
-    elif State.ask_question == 0:
-        State.ask_question = 1
+    elif State.ask_question == False:
+        State.ask_question = True
         bot.send_message(message.chat.id, "Ваш вопрос: \n" + message.text)
     else:
         bot.send_message(message.chat.id, "Echo")
