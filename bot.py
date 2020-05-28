@@ -4,16 +4,14 @@ from db import session
 from DataBaseClasses import User, Token
 import string 
 import random
-import datetime
+import time
 
 cfg = json.load(open("config.json"))
 
+
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
-class States():
-    START = "0"
-    COMMANDS = "1"
-    PROCESS = "2"
+
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -21,6 +19,7 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 from telebot import apihelper
 from telebot import types
+'''
 @bot.message_handler(commands = ["start"])
 def keyboard(message):
     keyboard = types.ReplyKeyboardMarkup(row_width = 1)
@@ -29,33 +28,79 @@ def keyboard(message):
     itembtn3 = types.KeyboardButton("Client")
     keyboard.add(itembtn1, itembtn2, itembtn3)
     bot.send_message(message.chat.id, "Выберите свой статус.", reply_markup=keyboard)
+    print(message)
+'''
 
-#apihelper.proxy = cfg['proxy']
 
-@bot.message_handler(commands = ["superuser init"])
+#Обработка выхода в систему.
+'''
+@bot.message_handler(commands =["start"])
+def start(message):
+    username = message.from_user.first_name
+    user_id = message.from_user.id
+    if not User.find_by_conversation(session):
+        client = User(name = username, conversation=user_id, role_id=1)
+        session.add(client)
+        bot.send_message(message.chat.id, "Вы успешно зарегистрировались в системе, {}".format(name))
+    else:
+        if not User.find_by_conversation(user_id).lower() != username.lower():
+            pass
+        # Надо изменить имя в БД
+        bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе, {}".format(name))
+'''
+
+
+
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
-    pass
+    args = message.text.split()
+    if (len(args)) != 3:
+        bot.send_message(message.chat.id, "Неправильное использование команды superuser\nШаблон:/superuser init TOKEN")
+        return
+    elif len(args[2]) != 6):
+        bot.send_message(message.chat.id, "Неправильный размер токена")
+    else:
+        token_new = args[2]
+        # if not Token.check_token: #Проверки + привязка юзера к новой роли 
+        #      cur_time =  time.strftime('%Y-%m-%d %H:%M:%S')
+        #     token_in_table = Token(value = token_new, expires_date =cur_time, role_id =  )
+        #     session.add()
+        #     
 
+    
+'''
 @bot.message_handler(content_types=["text"])
 def handle_message(message):
     print(message.text)
     bot.send_message(message.chat.id, message.text)
-
-@bot.message_handler(commands = ["manager create"])
+'''
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
+    if (len(args)) != 2:
+        bot.send_message(message.chat.id, "Много аргументов: команда должна быть /manager create")
+        return
     token = id_generator()
     bot.send_message(message.chat.id, token)
-    time = datetime.datetime.today().strftime("%d.%m.%Y")
-    new_token = Token(value = token, role_id = 1, expires_date = time)
+    cur_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    new_token = Token(value = token, role_id = 2, expires_date = cur_time)
     session.add(new_token)
     bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
 
 
 
 
-@bot.message_handler(commands = ["admin create"])
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
 def create_admin(message):
-    pass
+    if (len(args)) != 2:
+        bot.send_message(message.chat.id, "Много аргументов: команда должна быть /admin create")
+        return
+        token = id_generator()
+        bot.send_message(message.chat.id, token)
+        cur_time = time.strftime('%Y-%m-%d %H:%M:%S')
+        new_token = Token(value = token, role_id = 1, expires_date = cur_time)
+        session.add(new_token)
+        bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+    
 @bot.message_handler(commands = ["manager remove"])
 def manager_remove(message):
     pass
