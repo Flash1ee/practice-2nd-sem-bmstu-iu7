@@ -113,6 +113,21 @@ class User(Base):
         session.add(self)
         session.commit()
 
+    def get_active_tickets(self, session) -> list:
+        tickets = []
+        if self.role_id == 1:
+            tickets = session.query(Ticket).filter(
+                Ticket.close_date == None).all()
+        elif self.role_id == 2:
+            tickets = session.query(Ticket).filter(
+                Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
+        elif self.role_id == 3:
+            tickets = session.query(Ticket).filter(
+                Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
+        else:
+            print("Invalid user")
+        return tickets
+
     # Static methods
 
     @staticmethod
@@ -183,21 +198,6 @@ class User(Base):
 
         index = managers_factor.index(min(managers_factor))
         return all_managers[index]
-
-    def get_active_tickets(self, session) -> list:
-        tickets = []
-        if self.role_id == 1:
-            tickets = session.query(Ticket).filter(
-                Ticket.close_date == None).all()
-        elif self.role_id == 2:
-            tickets = session.query(Ticket).filter(
-                Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
-        elif self.role_id == 3:
-            tickets = session.query(Ticket).filter(
-                Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
-        else:
-            print("Invalid user")
-        return tickets
 
 
 
