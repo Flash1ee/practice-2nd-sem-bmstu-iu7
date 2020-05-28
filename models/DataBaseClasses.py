@@ -140,8 +140,16 @@ class User(Base):
         return session.query(User).filter(User.name == name).all()
 
     @staticmethod
-    def find_by_conversation(session, conversation: str) -> 'User':
-        return session.query(User).filter(User.conversation == conversation)[0]
+    def find_by_conversation(session, conversation: int) -> 'User':
+        return session.query(User).filter(User.conversation == conversation).first()
+
+    @staticmethod
+    def change_name(session, user_id=None, user_conversation=None, new_name: str) -> None:
+        if user_id:
+            User.find_by_id(session, user_id).name = new_name
+        elif user_conversation:
+            User.find_by_conversation(session, user_conversation).name = new_name
+        session.commit()
 
     # TODO: UNTESTED
     @ staticmethod
