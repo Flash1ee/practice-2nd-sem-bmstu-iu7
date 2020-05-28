@@ -160,7 +160,7 @@ class User(Base):
         return session.query(User).filter(User.conversation == conversation).first()
 
     @staticmethod
-    def change_name(session, user_id=None, user_conversation=None, new_name: str) -> None:
+    def change_name(session=None, user_id=None, user_conversation=None, new_name=None) -> None:
         if user_id:
             User.find_by_id(session, user_id).name = new_name
         elif user_conversation:
@@ -226,14 +226,13 @@ class Ticket(Base):
         return f'Title: {self.title}, manager_id={self.manager_id}'
 
     # TODO
-
     @staticmethod
-    get_closed_tickets_by_time(session, manager_id, days: int):
+    def get_closed_tickets_by_time(session, manager_id, days: int) -> list:
         pass
 
     # TODO
     @staticmethod
-    blocked_tickets_by_time(session, manager_id, days: int):
+    def get_blocked_tickets_by_time(session, manager_id, days: int) -> list:
         pass
 
     # TODO
@@ -317,7 +316,7 @@ class Message(Base):
     ticket = relationship('Ticket', back_populates='messages')
     sender = relationship('User', back_populates='messages')
 
-    @ staticmethod
+    @staticmethod
     def get(session, ticket_id: int, user_id: int):
         '''Получить список все сообщений user_id в данном ticket_id'''
         return session.query(Message).filter(Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
@@ -326,9 +325,19 @@ class Message(Base):
 class Token(Base):
     __tablename__ = 'tokens'
 
-    value = Column(Integer, primary_key=True)
+    value = Column(Integer, primary_key=True, autoincrement=False)
     expires_date = Column(DateTime)
     role_id = Column(Integer, ForeignKey('roles.id'))
 
     # Relationship
     role = relationship('Role', back_populates='tokens')
+
+
+    @staticmethod
+    def check_token(session, token_value) -> bool:
+        return bool(session.query(Token).get(token_value))
+
+
+    @staticmethod
+    def add_token(session, conversation, token_value) -> None:
+        pass

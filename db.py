@@ -73,22 +73,31 @@ session = Session()
 session.add(Message(ticket_id=12, sender_id=3))
 session.commit()
 
-user = User.find_by_id(session, 3)
+user = User.find_by_id(session, 1)
 
-tickets1 = user.get_active_tickets(session)
-tickets2 = User.get_unprocessed_tickets(session, user.id)
+print(Token.check_token(session, 'asdasda'))
 
-# # print(type(tickets2))
 
-for ticket in tickets1:
-    print(f'Title: {ticket.title}, Close_date: {ticket.close_date}')
 
-print('')
 
-# print(tickets2)
+pprint(user)
 
-for ticket in tickets2:
-    pprint(ticket.__dict__)
+# tickets1 = user.get_active_tickets(session)
+# tickets2 = User.get_unprocessed_tickets(session, user.id)
+
+# # # print(type(tickets2))
+
+# for ticket in tickets1:
+#     print(f'Title: {ticket.title}, Close_date: {ticket.close_date}')
+
+# print('')
+
+# # print(tickets2)
+
+# for ticket in tickets2:
+#     pprint(ticket.__dict__)
+
+
 
 
 
