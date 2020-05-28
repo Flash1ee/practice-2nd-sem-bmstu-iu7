@@ -14,6 +14,7 @@ Base = declarative_base()
 
 offset = timezone(timedelta(hours=3))
 
+
 class RoleNames(Enum):
     ADMIN = 1
     MANAGER = 2
@@ -148,12 +149,14 @@ class User(Base):
         if user_id:
             User.find_by_id(session, user_id).name = new_name
         elif user_conversation:
-            User.find_by_conversation(session, user_conversation).name = new_name
+            User.find_by_conversation(
+                session, user_conversation).name = new_name
         session.commit()
 
     # TODO: UNTESTED
     @ staticmethod
     def get_free_manager(session) -> 'User':
+        '''Поиск самого свободного менеджера'''
         all_managers = User.get_all_users_with_role(
             session, RoleNames.MANAGER.value)
         managers_factor = []
@@ -171,7 +174,7 @@ class User(Base):
             k2 = len(active_tickets)
             k3 = len(lastWeekCloseTicket) / 7
             k4 = len(lastWeekBlockedTicket) / 7
-            
+
             q1, q2, q3, q4 = 2, 1, 1, -1
 
             coef = k1 ** q1 + k2 ** q2 + k3 ** q3 + k4 ** q4
@@ -181,22 +184,21 @@ class User(Base):
         index = managers_factor.index(min(managers_factor))
         return all_managers[index]
 
-    def get_active_tickets(self, session):
+    def get_active_tickets(self, session) -> list:
         tickets = []
         if self.role_id == 1:
-            tickets = session.query(Ticket).filter(Ticket.close_date == None).all()
+            tickets = session.query(Ticket).filter(
+                Ticket.close_date == None).all()
         elif self.role_id == 2:
-            tickets = session.query(Ticket).filter(Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
+            tickets = session.query(Ticket).filter(
+                Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
         elif self.role_id == 3:
-            tickets = session.query(Ticket).filter(Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
+            tickets = session.query(Ticket).filter(
+                Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
         else:
             print("Invalid user")
         return tickets
 
-    # Для теста, пока возвращаем всех менеджеров
-    @staticmethod
-    def get_free_managers(session):
-        return session.query(User).filter(User.role_id == 2)
 
 
 class Ticket(Base):
@@ -223,8 +225,8 @@ class Ticket(Base):
     def __repr__(self):
         return f'Title: {self.title}, manager_id={self.manager_id}'
 
-    
     # TODO
+
     @staticmethod
     get_closed_tickets_by_time(session, manager_id, days: int):
         pass
@@ -239,7 +241,6 @@ class Ticket(Base):
     # http://old.code.mu/sql/group-by.html
     # http://quabr.com:8182/58620448/sqlalchemy-how-to-use-group-by-correctly-only-full-group-by
     # https://stackoverflow.com/questions/34115174/error-related-to-only-full-group-by-when-executing-a-query-in-mysql
-
     @staticmethod
     def get_unprocessed_tickets(session, manager_id) -> list:
         joined = session.query(Ticket).join(Ticket.messages)
@@ -271,7 +272,8 @@ class Ticket(Base):
         return session.query(Message).filter(Message.ticket_id == self.id).all()
 
     def put_refuse_data(self, session, reason):
-        new_blocked = BlockedTicket(ticket_id=self.id, manager_id=self.manager_id, reason=reason)
+        new_blocked = BlockedTicket(
+            ticket_id=self.id, manager_id=self.manager_id, reason=reason)
         session.add(new_blocked)
         session.commit()
 
