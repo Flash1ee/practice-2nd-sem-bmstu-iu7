@@ -115,17 +115,31 @@ class User(Base):
 
     def get_active_tickets(self, session) -> list:
         tickets = []
-        if self.role_id == 1:
+        if self.role_id == ADMIN:
             tickets = session.query(Ticket).filter(
                 Ticket.close_date == None).all()
-        elif self.role_id == 2:
+        elif self.role_id == MANAGER:
             tickets = session.query(Ticket).filter(
                 Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
-        elif self.role_id == 3:
+        elif self.role_id == CLIENT:
             tickets = session.query(Ticket).filter(
                 Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
         else:
-            print("Invalid user")
+            print("Invalid or blocked user")
+        return tickets
+
+    def get_all_tickets(self, session) -> list:
+        tickets = []
+        if self.role_id == ADMIN:
+            tickets = session.query(Ticket).all()
+        elif self.role_id == MANAGER:
+            tickets = session.query(Ticket).filter(
+                Ticket.manager_id == self.id).all()
+        elif self.role_id == CLIENT:
+            tickets = session.query(Ticket).filter(
+                Ticket.client_id == self.id).all()
+        else:
+            print("Invalid or blocked user")
         return tickets
 
     # Static methods
@@ -169,14 +183,17 @@ class User(Base):
         session.commit()
 
     # TODO: UNTESTED
+    # ВНИМАНИЕ: тут теперь обрабатывается список отказавшихся!
     @ staticmethod
-    def get_free_manager(session) -> 'User':
+    def get_free_manager(session, refusal_list) -> 'User':
         '''Поиск самого свободного менеджера'''
         all_managers = User.get_all_users_with_role(
             session, RoleNames.MANAGER.value)
         managers_factor = []
 
         for manager in all_managers:
+            if manager.id in refusal_list:
+                continue
             active_tickets = manager.get_active_tickets(session)
             unprocessed_tickets = Ticket.get_unprocessed_tickets(
                 session, manager.id)
@@ -196,6 +213,8 @@ class User(Base):
 
             managers_factor.append(coef)
 
+        if len(managers_factor) == 0:
+            return None
         index = managers_factor.index(min(managers_factor))
         return all_managers[index]
 
@@ -225,15 +244,21 @@ class Ticket(Base):
     def __repr__(self):
         return f'Title: {self.title}, manager_id={self.manager_id}'
 
-    # TODO
+    # TODO UNTESTED
     @staticmethod
     def get_closed_tickets_by_time(session, manager_id, days: int) -> list:
-        pass
+        curr_date = datetime.now(offset)
+        key_time = curr_date.time()
+        key_date = curr_date.fromordinal(curr_date.date().toordinal() - days)
+        key_date = datetime.combine(key_date, key_time)
+        return session.query(Ticket).filter(Ticket.manager_id == manager_id).filter(
+            Ticket.close_date > key_date).all()
 
     # TODO
     @staticmethod
     def get_blocked_tickets_by_time(session, manager_id, days: int) -> list:
-        pass
+        return
+        # Кешью на Вове про время блокировки
 
     # TODO
     # https://stackoverflow.com/questions/45775724/sqlalchemy-group-by-and-return-max-date
@@ -276,19 +301,23 @@ class Ticket(Base):
         session.add(new_blocked)
         session.commit()
 
-    def reappoint(self, session, refused_list):
-        new_managers = User.get_free_managers(session)
-        for man in new_managers:
-            if man not in refused_list:
-                self.appoint_to_manager(session, man.id)
-                session.commit()
-                return
-        self.appoint_to_manager(session, new_managers[0].id)
+    # TODO: UNTESTED
+    def reappoint(self, session):
+        refusal_list = [bt.manager_id for bt in session.query(BlockedTicket).filter(
+            BlockedTicket.ticket_id = self.id).all()]
+
+        new_manager = User.get_free_manager(session, refusal_list)
+        if new manager is None:
+            print("Everybody refused")
+            return False    # пока это будет сигналом админу, что все отказались
+        self.appoint_to_manager(session, new_manager.id)
         session.commit()
+        return True
 
     def close(self, session):
         self.close_date = datetime.now(offset)
         session.commit()
+
 
 
 class BlockedTicket(Base):
