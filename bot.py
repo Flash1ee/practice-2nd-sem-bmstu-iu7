@@ -32,7 +32,7 @@ def keyboard(message):
 '''
 
 
-#Обработка выхода в систему.
+#Обработка входа в систему.
 '''
 @bot.message_handler(commands =["start"])
 def start(message):
