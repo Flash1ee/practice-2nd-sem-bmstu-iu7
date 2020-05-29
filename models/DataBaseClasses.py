@@ -333,11 +333,20 @@ class Token(Base):
     role = relationship('Role', back_populates='tokens')
 
 
-    @staticmethod
-    def check_token(session, token_value) -> bool:
-        return bool(session.query(Token).get(token_value))
+    # @staticmethod
+    # def check_token(session, token_value) -> bool:
+    #     return bool(session.query(Token).get(token_value))
 
 
-    @staticmethod
-    def add_token(session, conversation, token_value) -> None:
-        pass
+    # @staticmethod   
+    # def add_token(session, conversation, token_value) -> None:
+    #     pass
+
+
+
+    def generate()
+
+    def activate()
+
+    def find()
+
