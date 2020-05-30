@@ -176,7 +176,7 @@ def get_manager_list(message):
     elif admin.role_id != 3:
         bot.send_message(message.chat.id, "Извините, эта команда доступна только для администраторов приложения.")
     else:
-        if not func:
+        if not func or message.text != "/manager_list":
         bot.send_message(message.chat.id, "Запрос должен состоять только из команды '/manager_list'. Пожалуйста,"\
                          " оформите Ваш запрос корректно.")
         return 
