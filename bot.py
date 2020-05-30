@@ -141,7 +141,7 @@ def get_manager_list(message):
     if not admin:
         bot.send_message(message.chat.id, "Для того, чтобы воспользоваться командой, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /superuser_init.")
-    elif admin.role_id != 3:
+    elif admin.role_id != 1:
         bot.send_message(message.chat.id, "Извините, эта команда доступна только для администраторов приложения.")
     else:
         if message.text != "/manager_list":
