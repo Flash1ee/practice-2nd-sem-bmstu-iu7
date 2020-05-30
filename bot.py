@@ -121,7 +121,7 @@ def create_ticket(message):
 #просмотр активных тикетов
 @bot.message_handler(commands = ["ticket_list"])
 def active_ticket_list(message):
-    user = session.query(User).filter(User.id == message.chat.id)
+    user = session.query(User).filter(User.id == message.from_user.id)
     if not user:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -131,13 +131,25 @@ def active_ticket_list(message):
 
 
 
+@bot.message_handler(commands = ["ticket"])
+def chose_ticket(message):
+    user = session.query(User).filter(User.id == message.from_user.id)
+    if not user:
+        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /start или /superuser_init.")
+    else:
+        bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться.Для просмотра активных "\
+                         "тикетов Вы можете воспользоваться командой /ticket_list."
+        #TODO Как отловить это сообщение?
+
+
 
 #(версия /manager_list Полины) Возможно, это не работает, не тестила на бд, но логика примерно такая
 #TODO помещение команд в messages?
 @bot.message_handler('/manager_list' in message.text)
 def get_manager_list(message):
     admin = User()
-    admin = session.query(User).filter(User.id == message.chat.id)
+    admin = session.query(User).filter(User.id == message.from_user.id)
     if not admin:
         bot.send_message(message.chat.id, "Для того, чтобы воспользоваться командой, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /superuser_init.")
@@ -239,9 +251,6 @@ def create_admin(message):
 def manager_remove(message):
     pass
 
-@bot.message_handler(commands = ["ticket"])
-def ticket_info(message):
-    pass
 @bot.message_handler(commands = ["ticket close"])
 def close_ticket(message):
     pass
