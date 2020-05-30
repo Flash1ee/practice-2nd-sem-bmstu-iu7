@@ -5,27 +5,33 @@ from DataBaseClasses import User, Token
 import string 
 import random
 import time
+from telebot import apihelper
+from telebot import types
+
 
 cfg = json.load(open("config.json"))
-
-
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
 
+#это по идее не нужно
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
+#формирование тикета:
+def generate_ticket(length = 6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for i in range(length))
 
-from telebot import apihelper
-from telebot import types
-
+#формирование токена: больше запас цифр для надежности(мнимой).
+def generate_token(length = 10, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for i in range(length))
 
 def create_su_init_keyboard(buttons):
     keyboard = types.InlineKeyboardMarkup(row_width = 3)
     for x in buttons:
         keyboard.add(types.InlineKeyboardButton(text = x, callback_data = x))
     return keyboard
+
 
 @bot.callback_query_handler(func = lambda x: True)
 def callback_handler(callback_query):
@@ -45,6 +51,7 @@ def callback_handler(callback_query):
         #else:#если не первый:
         bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Администратора:')
         #TODO показать панель админа, если он авторизовался(нужно состояние)
+        
 
 #Обработка входа в систему.
 '''
@@ -98,15 +105,8 @@ def create_superuser(message):
         #      cur_time =  time.strftime('%Y-%m-%d %H:%M:%S')
         #     token_in_table = Token(value = token_new, expires_date =cur_time, role_id =  )
         #     session.add()
-        #     
 
     
-'''
-@bot.message_handler(content_types=["text"])
-def handle_message(message):
-    print(message.text)
-    bot.send_message(message.chat.id, message.text)
-'''
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
     if (len(args)) != 2:
@@ -121,7 +121,6 @@ def create_manager(message):
 
 
 
-
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
 def create_admin(message):
     if (len(args)) != 2:
@@ -133,6 +132,7 @@ def create_admin(message):
         new_token = Token(value = token, role_id = 1, expires_date = cur_time)
         session.add(new_token)
         bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+        
     
 @bot.message_handler(commands = ["manager remove"])
 def manager_remove(message):
@@ -147,7 +147,6 @@ def get_manager_list(message):
             "/manager create")
     else:
         bot.send_message(message.chat.id, "\n".join(managers))
-    
 
 
 @bot.message_handler(commands = ["ticket list"])
