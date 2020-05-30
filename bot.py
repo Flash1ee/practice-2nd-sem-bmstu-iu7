@@ -85,9 +85,6 @@ def callback_handler(callback_query):
             session.add(Token(value = token, expires_date = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 1))
             session.add(User(id = message.from_user.id, conversation = None, name = message.from_user.first_name, role_id = 1))
             session.commit()
-        elif admin.role_id != 1:
-            bot.send_message(message.chat.id, "Вы не значитесь в списке администраторов. Для регистрации в системе " \
-                             "в качестве администратора воспользуйтесь командой /superuser_init.")
         elif admin.role_id == 1:
             bot.send_message(message.chat.id, "Вы уже значитесь в списке администраторов. Для входа в систему " \
                              "в качестве администратора воспользуйтесь командой /superuser_enter.")
