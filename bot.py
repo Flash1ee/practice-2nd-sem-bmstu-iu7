@@ -56,10 +56,10 @@ def callback_handler(callback_query):
         if not admin:
             #Значит администратор первый. Присваиваем случайно токен.
             token = generate_token()
-            session.add(Token(value = token, expires_date = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 3))
-            session.add(User(id = message.from_user.id, conversation = None, name = message.from_user.first_name, role_id = 3))
+            session.add(Token(value = token, expires_date = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 1))
+            session.add(User(id = message.from_user.id, conversation = None, name = message.from_user.first_name, role_id = 1))
             session.commit()
-        elif admin.role_id != 3:
+        elif admin.role_id != 1:
             bot.send_message(message.chat.id, "Вы не значитесь в списке администраторов. Для регистрации в системе " \
                              "в качестве администратора воспользуйтесь командой /superuser_init.")
         else:
@@ -86,9 +86,8 @@ def start(message):
 
 @bot.message_handler(commands = ["start"])
 def start_message(message):
-    client = User()
-    init = session.query(User).filter(User.id == message.chat.id)
-    if not init:
+    client = session.query(User).filter(User.id == message.from_user.id)
+    if not client:
         session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 3))
         session.commit()
         bot.send_message(message.chat.id, "Добро пожаловать в систему <Name_bot>. Для начала работы воспользуйтесь" \
@@ -101,10 +100,10 @@ def start_message(message):
 #вход в систему: менеджер/админ
 @bot.message_handler(commands = ["superuser_init"])
 def superuser_init(message):
+    user = session.query(User).filter(User.id == message.from_user.id)
     keyboard = create_keyboard("Manager", "Admin")
     bot.send_message(message.chat.id, "Добро пожаловать в систему. Выберите свой статус:", reply_markup=keyboard)
-
-
+    
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
     args = message.text.split()
