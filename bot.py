@@ -21,6 +21,31 @@ from telebot import apihelper
 from telebot import types
 
 
+def create_su_init_keyboard(buttons):
+    keyboard = types.InlineKeyboardMarkup(row_width = 3)
+    for x in buttons:
+        keyboard.add(types.InlineKeyboardButton(text = x, callback_data = x))
+    return keyboard
+
+@bot.callback_query_handler(func = lambda x: True)
+def callback_handler(callback_query):
+    message = callback_query.message
+    text = callback_query.data
+    if text == "Manager":
+        bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Менеджера:')
+        #TODO показать панель менеджера, если он авторизовался(нужно состояние)
+    elif text == "Admin":
+        #если это первый суперюзер - присвоить случайный токен. Действуем по принципу "кто успеет" (?)
+        #test = session.query(User).filter(User.role_id == 0)
+        #if not test:
+            #token = generate_token()
+            #session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 0))
+            #session.add(Token(value = token, expires_data = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 0))
+            #session.commit()
+        #else:#если не первый:
+        bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Администратора:')
+        #TODO показать панель админа, если он авторизовался(нужно состояние)
+
 #Обработка входа в систему.
 '''
 @bot.message_handler(commands =["start"])
@@ -51,6 +76,12 @@ def start_message(message):
         bot.send_message(message.chat.id, "Вы уже зарегистрированы в системе.  Для начала работы вы можете воспользоваться"\
                          "командой /ticket_add для создания тикета или /ticket_list для просмотра истории Ваших тикетов." 
 
+
+#вход в систему: менеджер/админ
+@bot.message_handler(commands = ["superuser_init"])
+def superuser_init(message):
+    keyboard = create_keyboard("Manager", "Admin")
+    bot.send_message(message.chat.id, "Добро пожаловать в систему. Выберите свой статус:", reply_markup=keyboard)
 
 
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
