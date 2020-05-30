@@ -4,37 +4,22 @@ from db import session
 from DataBaseClasses import User, Token
 import string 
 import random
-import datetime
+import time
 from telebot import apihelper
 from telebot import types
 
 cfg = json.load(open("config.json"))
 
+
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
-class Person:
-    def __init__(self):
-        self.Start = False
-        self.Ticket_add = False
-        self.Ticket_add_answer = False
-        self.Ticket_list = False
-        self.Ticket_close = False
-        self.ticket = []
-        self.id = -1
-        self.name = -1
-        self.conversation = -1
-        self.role_id = -1   
-    def start_update(data):
-        self.Start = True
-        self.id = data[0]
-        self.name = data[1]
-        self.conversation = data[2]
-        self.role_id = data[3]
-    def ticket_add(self, ticket):
-        self.ticket.append(ticket)
 
-def generate_ticket(length = 6, chars=string.ascii_uppercase + string.digits):
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+#больше запас цифр для надежности(мнимой).
+def generate_token(length = 10, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for i in range(length))
 
 def create_su_init_keyboard(buttons):
@@ -43,81 +28,145 @@ def create_su_init_keyboard(buttons):
         keyboard.add(types.InlineKeyboardButton(text = x, callback_data = x))
     return keyboard
 
-@bot.callback_query_handler(func = lambda x: True)
-def callback_handler(callback_query):
-    message = callback_query.message
-    text = callback_query.data
-    if text == "Manager":
-        bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Менеджера:')
-        #нужно состояние менеджера, ввел ли он идентификатор - люди с BD?
-        #TODO показать панель менеджера, если он авторизовался(нужно состояние)
-    elif text == "Admin":
-        #если это первый суперюзер - идентифицировать - как?
-        
-        #если не первый:
-        bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Администратора:')
-        #нужно состояние админа, ввел ли он идентификатор - люди с BD?
-        #TODO показать панель админа, если он авторизовался(нужно состояние)
+'''
+@bot.message_handler(commands = ["start"])
+def keyboard(message):
+    keyboard = types.ReplyKeyboardMarkup(row_width = 1)
+    itembtn1 = types.KeyboardButton('Admin')
+    itembtn2 = types.KeyboardButton('Manager')
+    itembtn3 = types.KeyboardButton("Client")
+    keyboard.add(itembtn1, itembtn2, itembtn3)
+    bot.send_message(message.chat.id, "Выберите свой статус.", reply_markup=keyboard)
+    print(message)
+'''
 
+
+#Обработка входа в систему.
+'''
+@bot.message_handler(commands =["start"])
+def start(message):
+    username = message.from_user.first_name
+    user_id = message.from_user.id
+    if not User.find_by_conversation(session):
+        client = User(name = username, conversation=user_id, role_id=1)
+        session.add(client)
+        bot.send_message(message.chat.id, "Вы успешно зарегистрировались в системе, {}".format(name))
+    else:
+        if not User.find_by_conversation(user_id).lower() != username.lower():
+            pass
+        # Надо изменить имя в БД
+        bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе, {}".format(name))
+'''
 @bot.message_handler(commands = ["start"])
 def start_message(message):
-    #TODO проверить, уникальный ли юзер? Может быть дублирование
-    #Добавление в бд: (пока непонятно, кто этим занимается. Навеное, должен быть метод)
-    #session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 2))
-    #session.commit()
-    #Это багофича(инициализурую пока, как могу. В идеале нужны методы с бд):
-    Person.start_update([message.from_user.id, message.chat.id, message.from_user.first_name, 2])
-    bot.send_message(message.chat.id, "Добро пожаловать в систему <Name_bot>. Для начала работы воспользуйтесь" \
+    client = User()
+    init = session.query(User).filter(User.id == message.chat.id)
+    if not init:
+        session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 2))
+        session.commit()
+        bot.send_message(message.chat.id, "Добро пожаловать в систему <Name_bot>. Для начала работы воспользуйтесь" \
                      " командой /ticket_add.")
-    #test = session.query(User)[0]
-    #print(test.id)
+    else:
+        bot.send_message(message.chat.id, "Вы уже зарегистрированы в системе.  Для начала работы вы можете воспользоваться"\
+                         "командой /ticket_add для создания тикета или /ticket_list для просмотра истории Ваших тикетов." 
 
-#вход в систему: менеджер/админ
+
+
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
+def create_superuser(message):
+    args = message.text.split()
+    if (len(args)) != 3:
+        bot.send_message(message.chat.id, "Неправильное использование команды superuser\nШаблон:/superuser init TOKEN")
+        return
+    elif len(args[2]) != 6):
+        bot.send_message(message.chat.id, "Неправильный размер токена")
+    else:
+        token_new = args[2]
+        # if not Token.check_token: #Проверки + привязка юзера к новой роли 
+        #      cur_time =  time.strftime('%Y-%m-%d %H:%M:%S')
+        #     token_in_table = Token(value = token_new, expires_date =cur_time, role_id =  )
+        #     session.add()
+        #
+        
+#вход в систему: менеджер/админ(другой вариант)
 @bot.message_handler(commands = ["superuser_init"])
 def superuser_init(message):
     keyboard = create_keyboard("Manager", "Admin")
     bot.send_message(message.chat.id, "Добро пожаловать в систему. Выберите свой статус:", reply_markup=keyboard)
+
     
+'''
+@bot.message_handler(content_types=["text"])
+def handle_message(message):
+    print(message.text)
+    bot.send_message(message.chat.id, message.text)
+'''
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
+def create_manager(message):
+    if (len(args)) != 2:
+        bot.send_message(message.chat.id, "Много аргументов: команда должна быть /manager create")
+        return
+    token = id_generator()
+    bot.send_message(message.chat.id, token)
+    cur_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    new_token = Token(value = token, role_id = 2, expires_date = cur_time)
+    session.add(new_token)
+    bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+
+
+
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
+def create_admin(message):
+    if (len(args)) != 2:
+        bot.send_message(message.chat.id, "Много аргументов: команда должна быть /admin create")
+        return
+        token = id_generator()
+        bot.send_message(message.chat.id, token)
+        cur_time = time.strftime('%Y-%m-%d %H:%M:%S')
+        new_token = Token(value = token, role_id = 1, expires_date = cur_time)
+        session.add(new_token)
+        bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+    
+@bot.message_handler(commands = ["manager remove"])
+def manager_remove(message):
+    pass
+
+
+@bot.message_handler(commands = ["manager list"])
+def get_manager_list(message):
+    managers = User.get_all_managers(session)
+    if not managers:
+        bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
+            "/manager create")
+    else:
+        bot.send_message(message.chat.id, "\n".join(managers))
+    
+
 @bot.message_handler(commands = ["ticket_add"])
 def create_ticket(message):
     if Person.Start == True:
-        Person.Ticket_add = True
         ticket = generate_ticket()
         bot.send_message(message.chat.id, Person.name + ", пишите ваш вопрос:")
-        Person.ticket_add(ticket)
     else:
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start.")
 
-@bot.message_handler(commands = ["ticket_close"])
-def create_ticket(message):
-    bot.send_message(message.chat.id, "TODO:")
+@bot.message_handler(commands = ["ticket list"])
+def active_ticket_list(message):
+    pass
+@bot.message_handler(commands = ["ticket"])
+def ticket_info(message):
+    pass
+@bot.message_handler(commands = ["ticket close"])
+def close_ticket(message):
+    pass
 
-@bot.message_handler(commands = ["ticket_id"])
-def create_ticket(message):
-    bot.send_message(message.chat.id, "TODO:")
+@bot.message_handler(commands = ["cancel"])
+def cancel_operation(message):
+    pass
 
-@bot.message_handler(commands = ["ticket_list"])
-def create_ticket(message):
-    bot.send_message(message.chat.id, "TODO:")
-        
-@bot.message_handler(content_types=['text'])
-@bot.edited_message_handler(content_types = ['text'])
-def handle_message(message):
-    #тест, надо брать из бд
-    #нужно состояние, вызвана ли команда /ticket_add, не задан ли вопрос от клиента, вошел ли пользователь в систему и тд
-    if Person.Start == False:
-        bot.send_message(message.chat.id, "Чтобы войти в систему, воспользуйтесь командой /start.")
-    elif Person.Ticket_add == False:
-        bot.send_message(message.chat.id, "Для того, чтобы задать вопрос, создайте тикет с помощью команды /start")
-    elif Prson.Ticket_add_answer == False:
-        Prson.Ticket_add_answer = True
-        bot.send_message(message.chat.id, "Опишите Ваш вопрос: \n" + message.text)
-    else:
-        bot.send_message(message.chat.id, "Echo")
-
-#def get_updates():
-    #r = requests.get(MAIN_URL + token + "/getUpdates" + "?offset=-10")
-    #print(r.json())
+@bot.message_handler(commands = ["confirm"])
+def confirm_operation(message):
+    pass
 
 bot.polling(none_stop=True)
