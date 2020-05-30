@@ -81,7 +81,7 @@ def start_message(message):
                      " командой /ticket_add.")
     else:
         bot.send_message(message.chat.id, "Вы уже зарегистрированы в системе.  Для начала работы вы можете воспользоваться"\
-                         "командой /ticket_add для создания тикета или /ticket_list для просмотра истории Ваших тикетов." 
+                         "командой /ticket_add для создания тикета или /ticket_list для просмотра истории Ваших тикетов." )
 
 
 #вход в систему: менеджер/админ
@@ -94,10 +94,10 @@ def superuser_init(message):
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
     args = message.text.split()
-    if (len(args)) != 3:
+    if len(args) != 3:
         bot.send_message(message.chat.id, "Неправильное использование команды superuser\nШаблон:/superuser init TOKEN")
         return
-    elif len(args[2]) != 6):
+    elif len(args[2]) != 6:
         bot.send_message(message.chat.id, "Неправильный размер токена")
     else:
         token_new = args[2]
@@ -151,7 +151,7 @@ def create_ticket(message):
             bot.send_message(message.chat.id, Person.name + ", опишите ваш вопрос:")
             session.add(Ticket(id = ticket, manager_id = None, client_id = message.from_user.id, \
                                title = "Зачем он нужен? Дальше сообщение ловить надо.", \
-                               start_date = time.strftime('%Y-%m-%d %H:%M:%S'), close_date = None)
+                               start_date = time.strftime('%Y-%m-%d %H:%M:%S'), close_date = None))
             session.commit()
 
 @bot.message_handler(commands = ["ticket list"])
@@ -164,7 +164,31 @@ def active_ticket_list(message):
     else:
         bot.send_message(message.chat.id, "Список активных тикетов:\n" + "\n".join(user.get_active_tickets))
             
-    
+#(версия /manager_list Полины) Возможно, это не работает, не тестила на бд, но логика примерно такая
+#TODO помещение команд в messages?
+@bot.message_handler(func = lambda message: '/manager_list' in message.text)
+def get_manager_list(message):
+    if (func):
+        bot.send_message(message.chat.id, "Запрос должен состоять только из команды '/manager_list'. Пожалуйста,"\
+                         " оформите Ваш запрос корректно.")
+        return 
+    admin = User()
+    admin = session.query(User).filter(User.id == message.chat.id)
+    if not admin:
+        bot.send_message(message.chat.id, "Для того, чтобы воспользоваться командой, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /superuser_init.")
+    elif admin.role_id != 3:
+        bot.send_message(message.chat.id, "Извините, эта команда доступна только для администраторов приложения.")
+    else:
+        managers = admin.get_all_managers(session)
+        if not managers:
+            bot.send_message(message.chat.id,"Менеджеры не найдены. Для добавления воспользуйтесь командой" \
+                "/manager create")
+        else:
+            bot.send_message(message.chat.id, "\n".join(managers))
+
+#(Версия /manager_list Димы)
+#Дима, такая команда не должна быть основной, потому что она для админа, это сплитится из сообщения.
 @bot.message_handler(commands = ["manager list"])
 def get_manager_list(message):
     managers = User.get_all_managers(session)
