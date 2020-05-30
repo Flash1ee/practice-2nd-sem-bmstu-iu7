@@ -19,17 +19,6 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 from telebot import apihelper
 from telebot import types
-'''
-@bot.message_handler(commands = ["start"])
-def keyboard(message):
-    keyboard = types.ReplyKeyboardMarkup(row_width = 1)
-    itembtn1 = types.KeyboardButton('Admin')
-    itembtn2 = types.KeyboardButton('Manager')
-    itembtn3 = types.KeyboardButton("Client")
-    keyboard.add(itembtn1, itembtn2, itembtn3)
-    bot.send_message(message.chat.id, "Выберите свой статус.", reply_markup=keyboard)
-    print(message)
-'''
 
 
 #Обработка входа в систему.
@@ -48,6 +37,19 @@ def start(message):
         # Надо изменить имя в БД
         bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе, {}".format(name))
 '''
+
+@bot.message_handler(commands = ["start"])
+def start_message(message):
+    client = User()
+    init = session.query(User).filter(User.id == message.chat.id)
+    if not init:
+        session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 2))
+        session.commit()
+        bot.send_message(message.chat.id, "Добро пожаловать в систему <Name_bot>. Для начала работы воспользуйтесь" \
+                     " командой /ticket_add.")
+    else:
+        bot.send_message(message.chat.id, "Вы уже зарегистрированы в системе.  Для начала работы вы можете воспользоваться"\
+                         "командой /ticket_add для создания тикета или /ticket_list для просмотра истории Ваших тикетов." 
 
 
 
