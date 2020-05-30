@@ -26,31 +26,45 @@ def generate_ticket(length = 6, chars=string.ascii_uppercase + string.digits):
 def generate_token(length = 10, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for i in range(length))
 
+#cоздание кастомной клавиатуры
 def create_su_init_keyboard(buttons):
     keyboard = types.InlineKeyboardMarkup(row_width = 3)
     for x in buttons:
         keyboard.add(types.InlineKeyboardButton(text = x, callback_data = x))
     return keyboard
 
-
+#это именно вход, не инициализация
+#TODO должна быть другая функция декоратора, потому что будет несколько клавиатур
 @bot.callback_query_handler(func = lambda x: True)
 def callback_handler(callback_query):
     message = callback_query.message
     text = callback_query.data
     if text == "Manager":
-        bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Менеджера:')
-        #TODO показать панель менеджера, если он авторизовался(нужно состояние)
+        manager = session.query(User).filter(User.id == message.from_user.id)
+        if not manager:
+            bot.send_message(message.chat.id, "Для начала работы необходимо зарегистрироваться "\
+                             "в системе с помощью команды /start."
+        elif manager != 2:
+            bot.send_message(message.chat.id, "Вы не значитесь в списке менеджеров. Для регистрации в системе " \
+                             "в качестве менеджера воспользуйтесь командой /superuser_init.")
+        else:
+            #А вдруг он уже вошел и пытается войти еще раз?
+            bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Менеджера:')
     elif text == "Admin":
         #если это первый суперюзер - присвоить случайный токен. Действуем по принципу "кто успеет" (?)
-        #test = session.query(User).filter(User.role_id == 1)
-        #if not test:
-            #token = generate_token()
-            #session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 1))
-            #session.add(Token(value = token, expires_data = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 1))
-            #session.commit()
-        #else:#если не первый:
-        bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Администратора:')
-        #TODO показать панель админа, если он авторизовался(нужно состояние)
+        admin = session.query(User).filter(User.id == message.from_user.id)
+        if not admin:
+            #Значит администратор первый. Присваиваем случайно токен.
+            token = generate_token()
+            session.add(Token(value = token, expires_date = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 3))
+            session.add(User(id = message.from_user.id, conversation = None, name = message.from_user.first_name, role_id = 3))
+            session.commit()
+        elif admin.role_id != 3:
+            bot.send_message(message.chat.id, "Вы не значитесь в списке администраторов. Для регистрации в системе " \
+                             "в качестве администратора воспользуйтесь командой /superuser_init.")
+        else:
+            bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Администратора:')
+        #TODO нужно это как-то отловить из бд messages ответ на это сообщение либо придумать какую-то форму ввода
         
 
 #Обработка входа в систему.
