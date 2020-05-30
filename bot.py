@@ -188,7 +188,6 @@ def get_manager_list(message):
             bot.send_message(message.chat.id, "\n".join(managers))
 
 #(Версия /manager_list Димы)
-#Дима, такая команда не должна быть основной, потому что она для админа, это сплитится из сообщения.
 @bot.message_handler(commands = ["manager list"])
 def get_manager_list(message):
     managers = User.get_all_managers(session)
