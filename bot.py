@@ -138,9 +138,28 @@ def chose_ticket(message):
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     else:
-        bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться.Для просмотра активных "\
-                         "тикетов Вы можете воспользоваться командой /ticket_list."
+        bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Для просмотра активных "\
+                         "тикетов Вы можете воспользоваться командой /ticket_list.")
         #TODO Как отловить это сообщение?
+
+
+
+
+@bot.message_handler(commands = ["ticket_close"])
+def close_ticket(message):
+    user = session.query(User).filter(User.id == message.from_user.id)
+    if not user:
+        bot.send_message(message.chat.id, "Для того, чтобы закрыть тикет, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /start или /superuser_init.")
+    elif user.role_id == 2:
+        bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой "\
+                         "/show_panel, чтобы просмотреть список возможных команд.")
+        #соответственно сделать эту панель
+    else:
+        bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть. Для просмотра активных "\
+                         "тикетов Вы можете воспользоваться командой /ticket_list.")
+        #TODO Как отловить это сообщение?
+        
 
 
 
@@ -249,10 +268,6 @@ def create_admin(message):
 
 @bot.message_handler(commands = ["manager_remove"])
 def manager_remove(message):
-    pass
-
-@bot.message_handler(commands = ["ticket close"])
-def close_ticket(message):
     pass
 
 @bot.message_handler(commands = ["cancel"])
