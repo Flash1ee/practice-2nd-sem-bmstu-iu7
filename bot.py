@@ -168,10 +168,6 @@ def active_ticket_list(message):
 #TODO помещение команд в messages?
 @bot.message_handler(func = lambda message: '/manager_list' in message.text)
 def get_manager_list(message):
-    if not func:
-        bot.send_message(message.chat.id, "Запрос должен состоять только из команды '/manager_list'. Пожалуйста,"\
-                         " оформите Ваш запрос корректно.")
-        return 
     admin = User()
     admin = session.query(User).filter(User.id == message.chat.id)
     if not admin:
@@ -180,6 +176,10 @@ def get_manager_list(message):
     elif admin.role_id != 3:
         bot.send_message(message.chat.id, "Извините, эта команда доступна только для администраторов приложения.")
     else:
+        if not func:
+        bot.send_message(message.chat.id, "Запрос должен состоять только из команды '/manager_list'. Пожалуйста,"\
+                         " оформите Ваш запрос корректно.")
+        return 
         managers = admin.get_all_managers(session)
         if not managers:
             bot.send_message(message.chat.id,"Менеджеры не найдены. Для добавления воспользуйтесь командой" \
