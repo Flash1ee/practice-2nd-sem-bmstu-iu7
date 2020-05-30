@@ -272,17 +272,48 @@ def create_admin(message):
         bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
 
 
+#TODO команды менеджера:
 
+#отказ менеджера от тикета
+@bot.message_handler(commands = ["ticket_refuse"])
+def ticket_refuse(message):
+    pass
+
+#ответ менеджера на тикет
+@bot.message_handler(commands = ["message"])
+def manager_answer(message):
+    pass
+
+#Команды адмиинистратора:
+
+#регистрация менеджера
+@bot.message_handler(commands = ["manager_create"])
+def manager_create(message):
+    pass
+
+#регистрация администратора
+@bot.message_handler(commands = ["admin_create"])
+def admin_create(message):
+    pass
+
+#получить список менеджеров
+@bot.message_handler(commands = ["manager_list"])
+def manager_list(message):
+    pass
+
+#удаление менеджера
 @bot.message_handler(commands = ["manager_remove"])
-def manager_remove(message):
+def cancel(message):
     pass
 
+#отмена операции(удаления менеджера)
 @bot.message_handler(commands = ["cancel"])
-def cancel_operation(message):
+def cancel(message):
     pass
 
+#подтверджение операции(удаления менеджера)
 @bot.message_handler(commands = ["confirm"])
-def confirm_operation(message):
+def confirm(message):
     pass
 
 bot.polling(none_stop=True)
