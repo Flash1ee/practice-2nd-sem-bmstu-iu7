@@ -70,17 +70,17 @@ session = Session()
 # ticket3.close_date = datetime.now(offset)
 # session.commit()
 
-session.add(Message(ticket_id=12, sender_id=3))
-session.commit()
+# session.add(Message(ticket_id=12, sender_id=3))
+# session.commit()
 
-user = User.find_by_id(session, 1)
+# user = User.find_by_id(session, 1)
 
-print(Token.check_token(session, 'asdasda'))
-
-
+# print(Token.check_token(session, 'asdasda'))
 
 
-pprint(user)
+
+
+# pprint(user)
 
 # tickets1 = user.get_active_tickets(session)
 # tickets2 = User.get_unprocessed_tickets(session, user.id)
@@ -120,8 +120,8 @@ pprint(user)
 #client_demasek = User(name='Demasek_client', conversation=100, role_id=3)
 #client_kalyan = User(name="Kalyan_client", conversation=196, role_id=3)
 
-Base.metadata.create_all(engine)
-session = Session()
+#Base.metadata.create_all(engine)
+#session = Session()
 
 # add users
 
@@ -232,3 +232,16 @@ session = Session()
 ##   a1 = a.get_active_tickets(session)
 ##   print(a1)
 ##print()
+
+#test_message4 = Message(ticket_id=20, sender_id=20, body='Test 1')
+#test_message5 = Message(ticket_id=36, sender_id=20, body="Test 2")
+#test_message6 = Message(ticket_id=18, sender_id=19, body='Test 3')
+#test_message7 = Message(ticket_id=17, sender_id=19, body='Test 4')
+#test_message8 = Message(ticket_id=17, sender_id=17, body='Test 5')
+#test_message9 = Message(ticket_id=20, sender_id=18, body='Test 6')
+#session.add(test_message8)
+#session.add(test_message9)
+#session.commit()
+
+#print(Ticket.get_unprocessed_tickets(session, 17))
+#print(Ticket.get_unprocessed_tickets(session, 18))
