@@ -42,11 +42,11 @@ def callback_handler(callback_query):
         #TODO показать панель менеджера, если он авторизовался(нужно состояние)
     elif text == "Admin":
         #если это первый суперюзер - присвоить случайный токен. Действуем по принципу "кто успеет" (?)
-        #test = session.query(User).filter(User.role_id == 0)
+        #test = session.query(User).filter(User.role_id == 1)
         #if not test:
             #token = generate_token()
-            #session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 0))
-            #session.add(Token(value = token, expires_data = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 0))
+            #session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 1))
+            #session.add(Token(value = token, expires_data = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 1))
             #session.commit()
         #else:#если не первый:
         bot.send_message(message.chat.id, 'Введите Ваш идентификатор для входа в систему Администратора:')
@@ -75,7 +75,7 @@ def start_message(message):
     client = User()
     init = session.query(User).filter(User.id == message.chat.id)
     if not init:
-        session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 2))
+        session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 3))
         session.commit()
         bot.send_message(message.chat.id, "Добро пожаловать в систему <Name_bot>. Для начала работы воспользуйтесь" \
                      " командой /ticket_add.")
@@ -144,7 +144,7 @@ def create_ticket(message):
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start.")
     else:
-        if user.role_id != 0:
+        if user.role_id != 1:
             bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
         else:    
             ticket = generate_ticket()
