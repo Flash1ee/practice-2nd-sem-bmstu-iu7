@@ -5,8 +5,6 @@ from DataBaseClasses import User, Token
 import string 
 import random
 import time
-from telebot import apihelper
-from telebot import types
 
 cfg = json.load(open("config.json"))
 
@@ -18,16 +16,9 @@ bot = telebot.TeleBot(token)
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-#больше запас цифр для надежности(мнимой).
-def generate_token(length = 10, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for i in range(length))
 
-def create_su_init_keyboard(buttons):
-    keyboard = types.InlineKeyboardMarkup(row_width = 3)
-    for x in buttons:
-        keyboard.add(types.InlineKeyboardButton(text = x, callback_data = x))
-    return keyboard
-
+from telebot import apihelper
+from telebot import types
 '''
 @bot.message_handler(commands = ["start"])
 def keyboard(message):
@@ -57,18 +48,6 @@ def start(message):
         # Надо изменить имя в БД
         bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе, {}".format(name))
 '''
-@bot.message_handler(commands = ["start"])
-def start_message(message):
-    client = User()
-    init = session.query(User).filter(User.id == message.chat.id)
-    if not init:
-        session.add(User(id = message.from_user.id, conversation = message.chat.id, name = message.from_user.first_name, role_id = 2))
-        session.commit()
-        bot.send_message(message.chat.id, "Добро пожаловать в систему <Name_bot>. Для начала работы воспользуйтесь" \
-                     " командой /ticket_add.")
-    else:
-        bot.send_message(message.chat.id, "Вы уже зарегистрированы в системе.  Для начала работы вы можете воспользоваться"\
-                         "командой /ticket_add для создания тикета или /ticket_list для просмотра истории Ваших тикетов." 
 
 
 
@@ -86,13 +65,7 @@ def create_superuser(message):
         #      cur_time =  time.strftime('%Y-%m-%d %H:%M:%S')
         #     token_in_table = Token(value = token_new, expires_date =cur_time, role_id =  )
         #     session.add()
-        #
-        
-#вход в систему: менеджер/админ(другой вариант)
-@bot.message_handler(commands = ["superuser_init"])
-def superuser_init(message):
-    keyboard = create_keyboard("Manager", "Admin")
-    bot.send_message(message.chat.id, "Добро пожаловать в систему. Выберите свой статус:", reply_markup=keyboard)
+        #     
 
     
 '''
@@ -112,6 +85,7 @@ def create_manager(message):
     new_token = Token(value = token, role_id = 2, expires_date = cur_time)
     session.add(new_token)
     bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+
 
 
 
@@ -142,14 +116,6 @@ def get_manager_list(message):
         bot.send_message(message.chat.id, "\n".join(managers))
     
 
-@bot.message_handler(commands = ["ticket_add"])
-def create_ticket(message):
-    if Person.Start == True:
-        ticket = generate_ticket()
-        bot.send_message(message.chat.id, Person.name + ", пишите ваш вопрос:")
-    else:
-        bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /start.")
 
 @bot.message_handler(commands = ["ticket list"])
 def active_ticket_list(message):
