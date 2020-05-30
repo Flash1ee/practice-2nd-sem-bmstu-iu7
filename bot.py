@@ -132,7 +132,25 @@ def create_admin(message):
         new_token = Token(value = token, role_id = 1, expires_date = cur_time)
         session.add(new_token)
         bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
-        
+
+
+@bot.message_handler(commands = ["ticket_add"])
+def create_ticket(message):
+    #я не знаю, правильно ли это работает с точки зения бд. Пока так
+    user = User()
+    init = session.query(User).filter(User.id == message.chat.id)
+    if not init:
+        bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /start.")
+    else:
+        if user.role_id != 0:
+            bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
+        else:    
+            ticket = generate_ticket()
+            bot.send_message(message.chat.id, Person.name + ", опишите ваш вопрос:")
+            session.add(Ticket(id = ticket, manager_id = None, client_id = message.from_user.id, \
+                               title = "Зачем он нужен? Дальше сообщение ловить надо.", \
+                               start_date = time.strftime('%Y-%m-%d %H:%M:%S'), close_date = None)
     
 @bot.message_handler(commands = ["manager remove"])
 def manager_remove(message):
