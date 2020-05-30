@@ -104,13 +104,12 @@ def callback_handler(callback_query):
 def create_ticket(message):
     #я не знаю, правильно ли это работает с точки зения бд. Пока так
     #Обатите внимание на title в ticket
-    user = User()
-    init = session.query(User).filter(User.id == message.chat.id)
-    if not init:
+    user = session.query(User).filter(User.id == message.chat.id)
+    if not user:
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start.")
     else:
-        if user.role_id != 1:
+        if user.role_id != 3:
             bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
         else:    
             ticket = generate_ticket()
