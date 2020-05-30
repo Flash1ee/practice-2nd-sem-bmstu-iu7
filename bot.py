@@ -168,7 +168,7 @@ def active_ticket_list(message):
 #TODO помещение команд в messages?
 @bot.message_handler(func = lambda message: '/manager_list' in message.text)
 def get_manager_list(message):
-    if (func):
+    if not func:
         bot.send_message(message.chat.id, "Запрос должен состоять только из команды '/manager_list'. Пожалуйста,"\
                          " оформите Ваш запрос корректно.")
         return 
