@@ -7,12 +7,11 @@ from datetime import datetime, timezone, timedelta
 from enum import Enum
 from pprint import pprint
 from sqlalchemy.sql import func
+import random
+import string
 
-offset = timezone(timedelta(hours=3))
-
+#  = timezone(timedelta(hours=3))
 Base = declarative_base()
-
-offset = timezone(timedelta(hours=3))
 
 
 class RoleNames(Enum):
@@ -219,7 +218,6 @@ class User(Base):
         return all_managers[index]
 
 
-
 class Ticket(Base):
     __tablename__ = 'tickets'
 
@@ -227,8 +225,8 @@ class Ticket(Base):
     manager_id = Column(Integer, ForeignKey('users.id'))
     client_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String(50))
-    start_date = Column(DateTime, default=datetime.now(offset))
-    close_date = Column(DateTime)
+    start_date = Column(DateTime, default=datetime.now())
+    close_date = Column(DateTime, default=None)
 
     # Relationship
     client = relationship('User', foreign_keys=[
@@ -247,7 +245,7 @@ class Ticket(Base):
     # TODO UNTESTED
     @staticmethod
     def get_closed_tickets_by_time(session, manager_id, days: int) -> list:
-        curr_date = datetime.now(offset)
+        curr_date = datetime.now()
         key_time = curr_date.time()
         key_date = curr_date.fromordinal(curr_date.date().toordinal() - days)
         key_date = datetime.combine(key_date, key_time)
@@ -304,10 +302,10 @@ class Ticket(Base):
     # TODO: UNTESTED
     def reappoint(self, session):
         refusal_list = [bt.manager_id for bt in session.query(BlockedTicket).filter(
-            BlockedTicket.ticket_id = self.id).all()]
+            BlockedTicket.ticket_id == self.id).all()]
 
         new_manager = User.get_free_manager(session, refusal_list)
-        if new manager is None:
+        if new_manager is None:
             print("Everybody refused")
             return False    # пока это будет сигналом админу, что все отказались
         self.appoint_to_manager(session, new_manager.id)
@@ -315,9 +313,8 @@ class Ticket(Base):
         return True
 
     def close(self, session):
-        self.close_date = datetime.now(offset)
+        self.close_date = datetime.now()
         session.commit()
-
 
 
 class BlockedTicket(Base):
@@ -327,6 +324,7 @@ class BlockedTicket(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     manager_id = Column(Integer, ForeignKey('users.id'))
     reason = Column(String(50))
+    date = Column(DateTime, default=datetime.now())
 
     # Relationship
     ticket = relationship('Ticket', back_populates='isblocked')
@@ -339,7 +337,7 @@ class Message(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     sender_id = Column(Integer, ForeignKey('users.id'))
     body = Column(Text)
-    date = Column(DateTime)
+    date = Column(DateTime, default=datetime.now())
 
     # Relationship
     ticket = relationship('Ticket', back_populates='messages')
@@ -347,35 +345,41 @@ class Message(Base):
 
     @staticmethod
     def get(session, ticket_id: int, user_id: int):
-        '''Получить список все сообщений user_id в данном ticket_id'''
+        '''Получить список всеx сообщений user_id в данном ticket_id'''
         return session.query(Message).filter(Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
 
 
 class Token(Base):
     __tablename__ = 'tokens'
 
-    value = Column(Integer, primary_key=True, autoincrement=False)
-    expires_date = Column(DateTime)
+    value = Column(String(12), primary_key=True, autoincrement=False)
+    expires_date = Column(
+        DateTime, default=datetime.now() + timedelta(days=14))
     role_id = Column(Integer, ForeignKey('roles.id'))
 
     # Relationship
     role = relationship('Role', back_populates='tokens')
 
+    def generate(session, role_id) -> 'Token':
+        LENGTH = 12
+        token_value = ''.join(random.choice(
+            string.ascii_letters + string.digits) for i in range(LENGTH))
+        new_token = Token(value=token_value, role_id=role_id)
+        session.add(new_token)
+        session.commit()
+        return new_token
 
-    # @staticmethod
-    # def check_token(session, token_value) -> bool:
-    #     return bool(session.query(Token).get(token_value))
+    def activate(session, token_value: str) -> None:
+        '''Ответственность за наличие токена в базе лежит на 
+        вызывающей стороне'''
+        session.delete(session.query(Token).get(token_value))
+        session.commit()
 
+    def find(session, token_value: str) -> 'Token or None':
+        '''Внимание: перед попыткой обратиться к полям полученного объекта,
+        необходимо обязательно сделать проверку на None'''
 
-    # @staticmethod   
-    # def add_token(session, conversation, token_value) -> None:
-    #     pass
-
-
-
-    def generate()
-
-    def activate()
-
-    def find()
-
+        token = session.query(Token).get(token_value)
+        if token and token.expires_date > datetime.now():
+            return token
+        return None
