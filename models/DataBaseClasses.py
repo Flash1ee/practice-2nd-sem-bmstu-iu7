@@ -7,12 +7,11 @@ from datetime import datetime, timezone, timedelta
 from enum import Enum
 from pprint import pprint
 from sqlalchemy.sql import func
+import random
+import string
 
 offset = timezone(timedelta(hours=3))
-
 Base = declarative_base()
-
-offset = timezone(timedelta(hours=3))
 
 
 class RoleNames(Enum):
@@ -227,7 +226,7 @@ class Ticket(Base):
     client_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String(50))
     start_date = Column(DateTime, default=datetime.now(offset))
-    close_date = Column(DateTime)
+    close_date = Column(DateTime, default=None)
 
     # Relationship
     client = relationship('User', foreign_keys=[
@@ -338,7 +337,7 @@ class Message(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     sender_id = Column(Integer, ForeignKey('users.id'))
     body = Column(Text)
-    date = Column(DateTime)
+    date = Column(DateTime, default=datetime.now(offset))
 
     # Relationship
     ticket = relationship('Ticket', back_populates='messages')
@@ -354,7 +353,8 @@ class Token(Base):
     __tablename__ = 'tokens'
 
     value = Column(Integer, primary_key=True, autoincrement=False)
-    expires_date = Column(DateTime)
+    expires_date = Column(DateTime, default=datetime.now(
+        offset) + timedelta(days=14))
     role_id = Column(Integer, ForeignKey('roles.id'))
 
     # Relationship
@@ -367,8 +367,19 @@ class Token(Base):
     # def add_token(session, conversation, token_value) -> None:
     #     pass
 
-    def generate()
+    def generate(session, role_id) -> 'Token':
+        LENGTH = 12
+        token_value = ''.join(random.choice(
+            string.ascii_letters + string.digits) for i in range(LENGTH))
+        new_token = Token(value=token_value, role_id=role_id)
+        session.add(new_token)
+        session.commit()
+        return new_token
 
-    def activate()
 
-    def find()
+    def activate():
+        pass
+
+
+    def find():
+        pass
