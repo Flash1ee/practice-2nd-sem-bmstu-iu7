@@ -137,6 +137,7 @@ def create_admin(message):
 @bot.message_handler(commands = ["ticket_add"])
 def create_ticket(message):
     #я не знаю, правильно ли это работает с точки зения бд. Пока так
+    #Обатите внимание на title в ticket
     user = User()
     init = session.query(User).filter(User.id == message.chat.id)
     if not init:
@@ -152,12 +153,18 @@ def create_ticket(message):
                                title = "Зачем он нужен? Дальше сообщение ловить надо.", \
                                start_date = time.strftime('%Y-%m-%d %H:%M:%S'), close_date = None)
             session.commit()
+
+@bot.message_handler(commands = ["ticket list"])
+def active_ticket_list(message):
+    user = User()
+    init = session.query(User).filter(User.id == message.chat.id)
+    if not init:
+        bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /start.")
+    else:
+        bot.send_message(message.chat.id, "Список активных тикетов:\n" + "\n".join(user.get_active_tickets))
+            
     
-@bot.message_handler(commands = ["manager remove"])
-def manager_remove(message):
-    pass
-
-
 @bot.message_handler(commands = ["manager list"])
 def get_manager_list(message):
     managers = User.get_all_managers(session)
@@ -167,10 +174,10 @@ def get_manager_list(message):
     else:
         bot.send_message(message.chat.id, "\n".join(managers))
 
-
-@bot.message_handler(commands = ["ticket list"])
-def active_ticket_list(message):
+@bot.message_handler(commands = ["manager remove"])
+def manager_remove(message):
     pass
+
 @bot.message_handler(commands = ["ticket"])
 def ticket_info(message):
     pass
