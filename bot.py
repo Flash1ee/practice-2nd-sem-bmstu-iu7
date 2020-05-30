@@ -151,6 +151,7 @@ def create_ticket(message):
             session.add(Ticket(id = ticket, manager_id = None, client_id = message.from_user.id, \
                                title = "Зачем он нужен? Дальше сообщение ловить надо.", \
                                start_date = time.strftime('%Y-%m-%d %H:%M:%S'), close_date = None)
+            session.commit()
     
 @bot.message_handler(commands = ["manager remove"])
 def manager_remove(message):
