@@ -219,7 +219,6 @@ class User(Base):
         return all_managers[index]
 
 
-
 class Ticket(Base):
     __tablename__ = 'tickets'
 
@@ -304,7 +303,7 @@ class Ticket(Base):
     # TODO: UNTESTED
     def reappoint(self, session):
         refusal_list = [bt.manager_id for bt in session.query(BlockedTicket).filter(
-            BlockedTicket.ticket_id = self.id).all()]
+            BlockedTicket.ticket_id=self.id).all()]
 
         new_manager = User.get_free_manager(session, refusal_list)
         if new manager is None:
@@ -319,7 +318,6 @@ class Ticket(Base):
         session.commit()
 
 
-
 class BlockedTicket(Base):
     __tablename__ = 'blocked_tickets'
 
@@ -327,6 +325,7 @@ class BlockedTicket(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     manager_id = Column(Integer, ForeignKey('users.id'))
     reason = Column(String(50))
+    date = Column(DateTime, default=datetime.now(offset))
 
     # Relationship
     ticket = relationship('Ticket', back_populates='isblocked')
@@ -347,7 +346,7 @@ class Message(Base):
 
     @staticmethod
     def get(session, ticket_id: int, user_id: int):
-        '''Получить список все сообщений user_id в данном ticket_id'''
+        '''Получить список всеx сообщений user_id в данном ticket_id'''
         return session.query(Message).filter(Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
 
 
@@ -361,21 +360,15 @@ class Token(Base):
     # Relationship
     role = relationship('Role', back_populates='tokens')
 
-
     # @staticmethod
     # def check_token(session, token_value) -> bool:
     #     return bool(session.query(Token).get(token_value))
-
-
-    # @staticmethod   
+    # @staticmethod
     # def add_token(session, conversation, token_value) -> None:
     #     pass
-
-
 
     def generate()
 
     def activate()
 
     def find()
-
