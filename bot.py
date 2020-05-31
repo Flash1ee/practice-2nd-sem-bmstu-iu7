@@ -53,12 +53,13 @@ def start_message(message):
 
 
 #вход в систему: менеджер/админ
+'''
 @bot.message_handler(commands = ["superuser_init"])
 def superuser_init(message):
     user = session.query(User).filter(User.id == message.from_user.id)
     keyboard = create_keyboard("Manager", "Admin")
     bot.send_message(message.chat.id, "Добро пожаловать в систему. Выберите свой статус:", reply_markup=keyboard)
-    
+'''
 #инициализация (не вход!!!)
 #TODO должна быть другая функция декоратора, потому что будет несколько клавиатур
 @bot.callback_query_handler(func = lambda x: True)
@@ -217,13 +218,18 @@ def get_manager_list(message):
 def start(message):
     username = message.from_user.first_name
     chat_id = message.chat.id
-    if not User.find_by_conversation(session, chat_id):
-        client = User.add_several(session, [(chat_id, username, RoleNames.CLIENT.value)])
-        bot.send_message(message.chat.id, "Вы успешно зарегистрировались в системе, {}".format(username))
+    cur_role = None
+    if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
+        cur_role = RoleNames.ADMIN.value
+    elif not User.find_by_conversation(session, chat_id):
+        cur_role = RoleNames.CLIENT.value
+    if cur_role:
+        client = User.add_several(session, [(chat_id, username, cur_role)])
+        bot.send_message(message.chat.id, "Вы успешно зарегистрировались в системе,{}\nВаша роль - {}".format(username, RoleNames(cur_role).name))
     else:
         if User.find_by_conversation(session, message.chat.id).name.lower() != username.lower()
             User.change_name(session, username, user_id = chat_id)
-        bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе, {}".format(username))
+        bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе,{}\nВаша роль - {}".format(username, RoleNames(cur_role).name))
 
 
 
