@@ -14,7 +14,7 @@ token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
 
-#это по идее не нужно
+#ЭТО ГЕНЕРАТОР ТОКЕНА
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
@@ -22,7 +22,7 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 def generate_ticket(length = 6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for i in range(length))
 
-#формирование токена: больше запас цифр для надежности(мнимой).
+#формирование токена: больше запас цифр для надежности(мнимой) - 
 def generate_token(length = 10, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for i in range(length))
 
@@ -109,6 +109,7 @@ def create_superuser(message):
     
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
+    args = message.text.split()
     if (len(args)) != 2:
         bot.send_message(message.chat.id, "Много аргументов: команда должна быть /manager create")
         return
@@ -124,7 +125,7 @@ def create_manager(message):
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
 def create_admin(message):
     if (len(args)) != 2:
-        bot.send_message(message.chat.id, "Много аргументов: команда должна быть /admin create")
+        bot.send_message(message.chat.id, "Много аргументов: команда должна выглядеть так /admin create")
         return
         token = id_generator()
         bot.send_message(message.chat.id, token)
