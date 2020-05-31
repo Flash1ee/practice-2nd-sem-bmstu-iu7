@@ -374,6 +374,7 @@ class Token(Base):
     # Relationship
     role = relationship('Role', back_populates='tokens')
 
+    @staticmethod
     def generate(session, role_id) -> 'Token':
         LENGTH = 12
         token_value = ''.join(random.choice(
@@ -383,12 +384,14 @@ class Token(Base):
         session.commit()
         return new_token
 
+    @staticmethod
     def activate(session, token_value: str) -> None:
         '''Ответственность за наличие токена в базе лежит на 
         вызывающей стороне'''
         session.delete(session.query(Token).get(token_value))
         session.commit()
 
+    @staticmethod
     def find(session, token_value: str) -> 'Token or None':
         '''Внимание: перед попыткой обратиться к полям полученного объекта,
         необходимо обязательно сделать проверку на None'''
@@ -397,3 +400,10 @@ class Token(Base):
         if token and token.expires_date > datetime.now():
             return token
         return None
+
+    def garbage_collector(session) -> None:
+        '''Удаляет все токены из БД, срок которых истек'''
+        tokens = session.query(Token).filter(Token.expires_date < datetime.now()).all()
+        for token in tokens:
+            session.delete(token)
+        session.commit()
