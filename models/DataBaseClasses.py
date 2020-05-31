@@ -181,14 +181,13 @@ class User(Base):
                 session, user_conversation).name = new_name
         session.commit()
 
-    # TODO: UNTESTED
-    # ВНИМАНИЕ: тут теперь обрабатывается список отказавшихся!
+    # TODO: Бета версия. Обсуждаема доработка/переработка метода.
     @ staticmethod
-    def get_free_manager(session, refusal_list) -> 'User':
-        '''Поиск самого свободного менеджера'''
-        all_managers = User.get_all_users_with_role(
-            session, RoleNames.MANAGER.value)
-        managers_factor = []
+    def get_free_manager(session, refusal_list) -> 'User or None':
+        '''Возвращает самого свободного менеджера, отсутствующего в refusal_list
+        В случае, если все менеджеры есть в refusal_list, возвращает None'''
+        all_managers = dict.fromkeys(User.get_all_users_with_role(
+            session, RoleNames.MANAGER.value), None)        
 
         for manager in all_managers:
             if manager.id in refusal_list:
@@ -211,12 +210,14 @@ class User(Base):
 
             coef = k1 ** q1 + k2 ** q2 + k3 ** q3 + k4 ** q4
 
-            managers_factor.append(coef)
+            all_managers[manager] = coef
 
-        if len(managers_factor) == 0:
+        all_managers = {key:val for key, val in all_managers.items() if val != None}
+        
+        if not len(all_managers):
             return None
-        index = managers_factor.index(min(managers_factor))
-        return all_managers[index]
+        
+        return sorted(all_managers, key=all_managers.get)[0]
 
 
 class Ticket(Base):
