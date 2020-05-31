@@ -173,7 +173,7 @@ class User(Base):
         return session.query(User).filter(User.conversation == conversation).first()
 
     @staticmethod
-    def change_name(session=None, user_id=None, user_conversation=None, new_name=None) -> None:
+    def change_name(session, new_name, user_id=None, user_conversation=None) -> None:
         if user_id:
             User.find_by_id(session, user_id).name = new_name
         elif user_conversation:
@@ -193,6 +193,7 @@ class User(Base):
         for manager in all_managers:
             if manager.id in refusal_list:
                 continue
+            
             active_tickets = manager.get_active_tickets(session)
             unprocessed_tickets = Ticket.get_unprocessed_tickets(
                 session, manager.id)
@@ -371,7 +372,7 @@ class Token(Base):
 
     value = Column(String(12), primary_key=True, autoincrement=False)
     expires_date = Column(
-        DateTime, default=datetime.now() + timedelta(days=14))
+        DateTime, default=datetime.now() + timedelta(days=1))
     role_id = Column(Integer, ForeignKey('roles.id'))
 
     # Relationship
