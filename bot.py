@@ -234,15 +234,20 @@ def create_superuser(message):
     args = message.text.split()
     if len(args) != 3:
         bot.send_message(message.chat.id, "Неправильное использование команды superuser\nШаблон:/superuser init TOKEN")
-        return
     elif len(args[2]) != 6:
         bot.send_message(message.chat.id, "Неправильный размер токена")
     else:
+        user = User.find_by_conversation(session, conversation = message.chat.id)
         token_new = args[2]
-        # if not Token.check_token: #Проверки + привязка юзера к новой роли 
-        #      cur_time =  time.strftime('%Y-%m-%d %H:%M:%S')
-        #     token_in_table = Token(value = token_new, expires_date =cur_time, role_id =  )
-        #     session.add()
+        my_token = Token.find(session, token_new)
+        if my_token:
+            user.appoint(session,my_token.role_id)
+            my_token.activate(session, token_new)
+            if my_token.role_id == RoleNames.MANAGER.value:
+                role_to_print = "MANAGER"
+            else:
+                role_to_print = "ADMIN"
+            bot.send_message(message.chat.id, "Токен успешно активирован, ваша роль {}".format(role_to_print))
 
 
     
