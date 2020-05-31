@@ -1,2 +1,21 @@
-Hello! It's Readme
-for second commt
+# Репозиторий командной практики 4+1
+
+## Презентация
+https://docs.google.com/presentation/d/1ZbUyarowXIFr3dnnkHVJTJlS24EzMiNQ9ePcBGha9DA/edit
+
+## Описания работы
+Разработатка автоматизированной системы распределения сообщений от клиентов по менеджерам посредством телеграмм бота.
+
+## Документация
+https://docs.google.com/document/d/1FhTePeGKF_eliwZVOVYhPkLzxA7LKkHaVnGjR7xGlEQ/
+
+Исходники схем и прочих файлов предствлены в папке [docs](./docs)
+## Распределение  
+[Тык](https://docs.google.com/spreadsheets/d/1m7NvXKFVwbzvFyYMQQWDVQqnsg1w64sfQ3BdbcYpw-Y/)
+## Участники
+* **Ковалева Дарья** - ментор
+* **Ларин Владимир** - тимлид
+* **Ивахненко Дмитрий** - разработчик-тестировщик
+* **Варин Дмитрий**  - разработчик-тестировщик
+* **Сироткина Полина** - разработчик-тестировщик
+* **Трошкин Николай** - разработчик-тестировщик
