@@ -1,13 +1,13 @@
 import telebot
 import json
 from db import session
-from DataBaseClasses import User, Token
+from models.DataBaseClasses import User, Token
 import string 
 import random
 import time
 from telebot import apihelper
 from telebot import types
-
+from models.DataBaseClasses import *
 
 cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
@@ -20,12 +20,8 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 #формирование тикета:
 def generate_ticket(length = 6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for i in range(length))
-<<<<<<< HEAD
 
 #формирование токена: больше запас цифр для надежности(мнимой) - 
-=======
-#формирование токена: больше запас цифр для надежности(мнимой).
->>>>>>> b0395bf52ea6b91ddd9e002452d26412e1fb66c5
 def generate_token(length = 10, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for i in range(length))
 
@@ -40,7 +36,7 @@ def create_su_init_keyboard(buttons):
 
 
 
-
+'''
 @bot.message_handler(commands = ["start"])
 def start_message(message):
     client = session.query(User).filter(User.id == message.from_user.id)
@@ -53,7 +49,7 @@ def start_message(message):
         bot.send_message(message.chat.id, "Вы уже зарегистрированы в системе.  Для начала работы Вы можете воспользоваться "\
                          "командой /ticket_add для создания тикета или /ticket_list для просмотра истории Ваших тикетов." )
 
-
+'''
 
 
 #вход в систему: менеджер/админ
@@ -174,21 +170,21 @@ def close_ticket(message):
         
 
 
-
+'''
 #(версия /manager_list Полины) Возможно, это не работает, не тестила на бд, но логика примерно такая
 #TODO помещение команд в messages?
-@bot.message_handler('/manager_list' in message.text)
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
 def get_manager_list(message):
     admin = User()
     admin = session.query(User).filter(User.id == message.from_user.id)
     if not admin:
         bot.send_message(message.chat.id, "Для того, чтобы воспользоваться командой, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /superuser_init.")
+                         "системе. Воспользуйтесь командой /superuser init.")
     elif admin.role_id != 1:
         bot.send_message(message.chat.id, "Извините, эта команда доступна только для администраторов приложения.")
     else:
-        if message.text != "/manager_list":
-            bot.send_message(message.chat.id, "Запрос должен состоять только из команды '/manager_list'. Пожалуйста,"\
+        if message.text != "/manager list":
+            bot.send_message(message.chat.id, "Запрос должен состоять только из команды '/manager list'. Пожалуйста,"\
                          " оформите Ваш запрос корректно.")
             return 
         managers = admin.get_all_managers(session)
@@ -197,37 +193,38 @@ def get_manager_list(message):
                 "/manager create")
         else:
             bot.send_message(message.chat.id, "\n".join(managers))
+'''
 
 #(Версия /manager_list Димы)
-@bot.message_handler(commands = ["manager list"])
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
 def get_manager_list(message):
-    managers = User.get_all_managers(session)
-    if not managers:
-        bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
-            "/manager create")
+    if User.find_by_id(session, message.chat.id).role_id != 1:
+        bot.send_message(message.chat.id,"Извините, эта команда доступна только для администраторов приложения.")
     else:
-        bot.send_message(message.chat.id, "\n".join(managers))
+        managers = User.get_all_users_with_role(RoleNames.MANAGER)
+        if not managers:
+            bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
+            "/manager create")
+        else:
+            bot.send_message(message.chat.id, "\n".join(managers))
 
 
 
 
 
 #Обработка входа в систему.
-'''
 @bot.message_handler(commands =["start"])
 def start(message):
     username = message.from_user.first_name
-    user_id = message.from_user.id
-    if not User.find_by_conversation(session):
-        client = User(name = username, conversation=user_id, role_id=1)
-        session.add(client)
-        bot.send_message(message.chat.id, "Вы успешно зарегистрировались в системе, {}".format(name))
+    chat_id = message.chat.id
+    if not User.find_by_conversation(session, chat_id):
+        client = User.add_several(session, [(chat_id, username, RoleNames.CLIENT.value)])
+        bot.send_message(message.chat.id, "Вы успешно зарегистрировались в системе, {}".format(username))
     else:
-        if not User.find_by_conversation(user_id).lower() != username.lower():
-            pass
-        # Надо изменить имя в БД
-        bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе, {}".format(name))
-'''
+        if User.find_by_conversation(session, message.chat.id).name.lower() != username.lower()
+            User.change_name(session, username, user_id = chat_id)
+        bot.send_message(message.chat.id, "Вы уже зарегистрировались в системе, {}".format(username))
+
 
 
 
