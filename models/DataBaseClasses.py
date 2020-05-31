@@ -369,8 +369,22 @@ class Token(Base):
     # Relationship
     role = relationship('Role', back_populates='tokens')
 
+
+    # Instance methods
+
+    def activate(self, session) -> None:
+        '''Активирует токен. (Удаляет из БД)
+        Ответственность за наличие токена в базе лежит на 
+        вызывающей стороне
+        '''
+        session.delete(self)
+        session.commit()
+
+    # Static methods
+
     @staticmethod
     def generate(session, role_id) -> 'Token':
+        '''Генерирует новый токен'''
         LENGTH = 12
         token_value = ''.join(random.choice(
             string.ascii_letters + string.digits) for i in range(LENGTH))
@@ -378,13 +392,6 @@ class Token(Base):
         session.add(new_token)
         session.commit()
         return new_token
-
-    @staticmethod
-    def activate(session, token_value: str) -> None:
-        '''Ответственность за наличие токена в базе лежит на 
-        вызывающей стороне'''
-        session.delete(session.query(Token).get(token_value))
-        session.commit()
 
     @staticmethod
     def find(session, token_value: str) -> 'Token or None':
