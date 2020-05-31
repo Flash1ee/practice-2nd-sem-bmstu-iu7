@@ -94,11 +94,14 @@ class User(Base):
         return ans
 
     def appoint(self, session, role_id: int) -> None:
-        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value '''
+        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value 
+            Autocommit = ON
+        '''
         self.role_id = role_id
         session.commit()
 
     def demote_manager(self, session) -> None:
+        '''Autocommit = ON'''
         his_tickets = self.get_active_tickets(session)
 
         for ticket in his_tickets:
@@ -108,6 +111,7 @@ class User(Base):
         session.commit()
 
     def add(self, session) -> None:
+        '''Autocommit = ON'''
         session.add(self)
         session.commit()
 
@@ -130,6 +134,7 @@ class User(Base):
         param session: current session,
         param user: [ (conversation, name, role_id), ...]
         role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
+        Autocommit = ON
         '''
         for user in users:
             session.add(
@@ -155,6 +160,10 @@ class User(Base):
 
     @staticmethod
     def change_name(session, new_name, user_id=None, user_conversation=None) -> None:
+        '''Ответственность за наличия пользователя с данным 
+        user_id/conversation в БД на вызывающей стороне
+        Autocommit = ON
+        '''
         if user_id:
             User.find_by_id(session, user_id).name = new_name
         elif user_conversation:
