@@ -196,21 +196,6 @@ def get_manager_list(message):
             bot.send_message(message.chat.id, "\n".join(managers))
 '''
 
-#(Версия /manager_list Димы)
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
-def get_manager_list(message):
-    if User.find_by_id(session, message.chat.id).role_id != 1:
-        bot.send_message(message.chat.id,"Извините, эта команда доступна только для администраторов приложения.")
-    else:
-        managers = User.get_all_users_with_role(RoleNames.MANAGER)
-        if not managers:
-            bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
-            "/manager create")
-        else:
-            bot.send_message(message.chat.id, "\n".join(managers))
-
-
-
 
 
 #Обработка входа в систему.
@@ -238,7 +223,10 @@ def start(message):
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
     args = message.text.split()
-    if len(args) != 3:
+    user = User.find_by_conversation(session, conversation = message.chat.id)
+    if not user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+    elif len(args) != 3:
         bot.send_message(message.chat.id, "Неправильное использование команды superuser\nШаблон:/superuser init TOKEN")
     elif len(args[2]) != 6:
         bot.send_message(message.chat.id, "Неправильный размер токена")
@@ -256,12 +244,14 @@ def create_superuser(message):
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
     args = message.text.split()
-    if (len(args)) != 2:
+    user = User.find_by_conversation(session, conversation = message.chat.id)
+    if not user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+    elif (len(args)) != 2:
         bot.send_message(message.chat.id, "Много аргументов: команда должна быть /manager create")
     else:
-        user = User.find_by_conversation(session, conversation = message.chat.id)
         if user.role_id != RoleNames.ADMIN.value:
-            bot.send_message(message.chat.id, "Извиите. У вас недостаточно прав, вы - {}".format(RoleNames(user.role_id).name))
+            bot.send_message(message.chat.id, "Извините. У вас недостаточно прав, вы - {}".format(RoleNames(user.role_id).name))
         else:
             new_token = Token.generate(session, RoleNames.MANAGER.value)
             bot.send_message(message.chat.id, "{}\nТокен создан - срок действия 24 часа".format(new_token.value))
@@ -271,15 +261,46 @@ def create_manager(message):
 
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
 def create_admin(message):
-    if (len(args)) != 2:
+    user = User.find_by_conversation(session, conversation = message.chat.id)
+    if not user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+    elif (len(args)) != 2:
         bot.send_message(message.chat.id, "Много аргументов: команда должна выглядеть так /admin create")
     else:
-        user = User.find_by_conversation(session, conversation = message.chat.id)
         if user.role_id != RoleNames.ADMIN.value:
             bot.send_message(message.chat.id, "Извиите. У вас недостаточно прав, вы - {}".format(RoleNames(user.role_id).name))
         else:
             new_token = Token.generate(session, RoleNames.ADMIN.value)
             bot.send_message(message.chat.id, "{}\nТокен создан - срок действия 24 часа".format(new_token.value))
+
+
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
+def get_manager_list(message):
+    args = message.text.split()
+    user = User.find_by_conversation(session, conversation = message.chat.id)
+    if not user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+    elif len(args) != 2:
+        bot.send_message(message.chat.id, "Неверное использование команды. Шаблон: /manager list")
+    elif user.role_id != RoleNames.ADMIN.value:
+        bot.send_message(message.chat.id,"Извините, эта команда доступна только для администраторов приложения.")
+    else:
+        managers = User.get_all_users_with_role(session, RoleNames.MANAGER.value)
+        if not managers:
+            bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
+            "/manager create")
+        else:
+            bot.send_message(message.chat.id, "\n".join(managers))
+
+@bot.message_handler(commands = ["role"])
+def check_role(message):
+    user = User.find_by_conversation(session, conversation = message.chat.id)
+    if not user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+    else:
+        bot.send_message(message.chat.id, "Ваша текущая роль - {}".format(RoleNames(user.role_id).name)) 
+
+
 
 
 #TODO команды менеджера:
@@ -295,16 +316,6 @@ def manager_answer(message):
     pass
 
 #Команды адмиинистратора:
-
-#регистрация менеджера
-@bot.message_handler(commands = ["manager_create"])
-def manager_create(message):
-    pass
-
-#регистрация администратора
-@bot.message_handler(commands = ["admin_create"])
-def admin_create(message):
-    pass
 
 #получить список менеджеров
 @bot.message_handler(commands = ["manager_list"])
