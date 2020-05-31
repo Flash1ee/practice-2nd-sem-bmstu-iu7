@@ -70,17 +70,17 @@ session = Session()
 # ticket3.close_date = datetime.now(offset)
 # session.commit()
 
-session.add(Message(ticket_id=12, sender_id=3))
-session.commit()
+# session.add(Message(ticket_id=12, sender_id=3))
+# session.commit()
 
-user = User.find_by_id(session, 1)
+# user = User.find_by_id(session, 1)
 
-print(Token.check_token(session, 'asdasda'))
-
-
+# print(Token.check_token(session, 'asdasda'))
 
 
-pprint(user)
+
+
+# pprint(user)
 
 # tickets1 = user.get_active_tickets(session)
 # tickets2 = User.get_unprocessed_tickets(session, user.id)
