@@ -252,13 +252,13 @@ def create_manager(message):
     args = message.text.split()
     if (len(args)) != 2:
         bot.send_message(message.chat.id, "Много аргументов: команда должна быть /manager create")
-        return
-    token = id_generator()
-    bot.send_message(message.chat.id, token)
-    cur_time = time.strftime('%Y-%m-%d %H:%M:%S')
-    new_token = Token(value = token, role_id = 2, expires_date = cur_time)
-    session.add(new_token)
-    bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+    else:
+        user = User.find_by_conversation(session, conversation = message.chat.id)
+        if user.role_id != RoleNames.ADMIN.value:
+            bot.send_message(message.chat.id, "Извиите. У вас недостаточно прав, вы - {}".format(RoleNames(user.role_id).name))
+        else:
+            new_token = Token.generate(session, RoleNames.MANAGER.value)
+            bot.send_message(message.chat.id, "{}\nТокен создан - срок действия 24 часа".format(new_token.value))
 
 
 
