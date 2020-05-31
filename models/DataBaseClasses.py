@@ -160,9 +160,9 @@ class User(Base):
 
     @staticmethod
     def change_name(session, new_name, user_id=None, user_conversation=None) -> None:
-        '''Ответственность за наличия пользователя с данным 
-        user_id/conversation в БД на вызывающей стороне
-        Autocommit = ON
+        '''Ответственность за наличие пользователя с данным 
+            user_id/user_conversation в БД на вызывающей стороне
+            Autocommit = ON
         '''
         if user_id:
             User.find_by_id(session, user_id).name = new_name
