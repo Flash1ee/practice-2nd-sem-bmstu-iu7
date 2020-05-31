@@ -252,11 +252,15 @@ class Ticket(Base):
         return session.query(Ticket).filter(Ticket.manager_id == manager_id).filter(
             Ticket.close_date > key_date).all()
 
-    # TODO
+    # TODO UNTESTED
     @staticmethod
     def get_blocked_tickets_by_time(session, manager_id, days: int) -> list:
-        return
-        # Кешью на Вове про время блокировки
+        curr_date = datetime.now()
+        key_time = curr_date.time()
+        key_date = curr_date.fromordinal(curr_date.date().toordinal() - days)
+        key_date = datetime.combine(key_date, key_time)
+        return session.query(BlockedTicket).filter(BlockedTicket.manager_id == manager_id).filter(
+            BlockedTicket.date > key_date).all()
 
     # TODO
     # https://stackoverflow.com/questions/45775724/sqlalchemy-group-by-and-return-max-date
@@ -265,14 +269,24 @@ class Ticket(Base):
     # https://stackoverflow.com/questions/34115174/error-related-to-only-full-group-by-when-executing-a-query-in-mysql
     @staticmethod
     def get_unprocessed_tickets(session, manager_id) -> list:
-        joined = session.query(Ticket).join(Ticket.messages)
+        #joined = session.query(Message).join(Ticket.messages)
+        #print(joined[1].id, joined[1].ticket_id, joined[1].date, joined[1].sender_id, joined[1].body)
+        #print(joined[1].ticket.id, joined[1].ticket.client_id, joined[1].ticket.manager_id, joined[1].ticket.title, joined[1].ticket.start_date)
+        #message = session.query(Message).filter(Message.id == 7)[0]
+        #print(message.ticket.id, message.ticket.client_id, message.ticket.manager_id, message.ticket.title, message.ticket.start_date)
+        #print(message.ticket.manager_id)
+        
+        res = session.query(Message.ticket_id, func.max(Message.date)).group_by(Message.ticket_id).all()
+        ticks = []
+        for a in res:
+            message = session.query(Message).filter(Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
+            if message.sender_id != manager_id and message.ticket.manager_id == manager_id:
+                ticks.append(message.ticket_id)
 
-        maxdate = func.max(Message.date).label('maxdate')
+        #all_open_tickets = joined.filter(Ticket.close_date.is_(None)).filter(
+        #    Ticket.manager_id == manager_id)
 
-        all_open_tickets = joined.filter(Ticket.close_date.is_(None)).filter(
-            Ticket.manager_id == manager_id)
-
-        return 'TODO'
+        return ticks
 
     def appoint_to_manager(self, session, new_manager_id):
         manager = session.query(User).get(new_manager_id)
