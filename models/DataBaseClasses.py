@@ -104,7 +104,6 @@ class User(Base):
         for ticket in his_tickets:
             new_manager = User.get_free_manager(session)
             ticket.appoint_to_manager(session, new_manager.id)
-
         self.role_id = RoleNames.CLIENT.value
         session.commit()
 
@@ -112,33 +111,15 @@ class User(Base):
         session.add(self)
         session.commit()
 
-    def get_active_tickets(self, session) -> list:
-        tickets = []
-        if self.role_id == ADMIN:
-            tickets = session.query(Ticket).filter(
-                Ticket.close_date == None).all()
-        elif self.role_id == MANAGER:
-            tickets = session.query(Ticket).filter(
-                Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
-        elif self.role_id == CLIENT:
-            tickets = session.query(Ticket).filter(
-                Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
-        else:
-            print("Invalid or blocked user")
-        return tickets
-
     def get_all_tickets(self, session) -> list:
-        tickets = []
-        if self.role_id == ADMIN:
+        if self.role_id == ADMIN.value:
             tickets = session.query(Ticket).all()
-        elif self.role_id == MANAGER:
+        elif self.role_id == MANAGER.value:
             tickets = session.query(Ticket).filter(
                 Ticket.manager_id == self.id).all()
-        elif self.role_id == CLIENT:
+        elif self.role_id == CLIENT.value:
             tickets = session.query(Ticket).filter(
                 Ticket.client_id == self.id).all()
-        else:
-            print("Invalid or blocked user")
         return tickets
 
     # Static methods
