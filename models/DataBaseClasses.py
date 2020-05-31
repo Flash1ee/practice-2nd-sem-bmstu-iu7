@@ -143,7 +143,9 @@ class User(Base):
 
     @staticmethod
     def get_all_users_with_role(session, role_id) -> list:
-        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value '''
+        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value 
+        (В случае, если нет ни одного User, вернет пустой list)
+        '''
         return session.query(User).filter(User.role_id == role_id).all()
 
     @staticmethod
@@ -177,12 +179,12 @@ class User(Base):
         '''Возвращает самого свободного менеджера, отсутствующего в refusal_list
         В случае, если все менеджеры есть в refusal_list, возвращает None'''
         all_managers = dict.fromkeys(User.get_all_users_with_role(
-            session, RoleNames.MANAGER.value), None)        
+            session, RoleNames.MANAGER.value), None)
 
         for manager in all_managers:
             if manager.id in refusal_list:
                 continue
-            
+
             active_tickets = manager.get_active_tickets(session)
             unprocessed_tickets = Ticket.get_unprocessed_tickets(
                 session, manager.id)
@@ -202,11 +204,12 @@ class User(Base):
 
             all_managers[manager] = coef
 
-        all_managers = {key:val for key, val in all_managers.items() if val != None}
-        
+        all_managers = {key: val for key,
+                        val in all_managers.items() if val != None}
+
         if not len(all_managers):
             return None
-        
+
         return sorted(all_managers, key=all_managers.get)[0]
 
 
@@ -369,7 +372,6 @@ class Token(Base):
     # Relationship
     role = relationship('Role', back_populates='tokens')
 
-
     # Instance methods
 
     def activate(self, session) -> None:
@@ -385,23 +387,6 @@ class Token(Base):
     @staticmethod
     def generate(session, role_id) -> 'Token':
         '''Генерирует новый токен'''
-        LENGTH = 12
-        token_value = ''.join(random.choice(
-            string.ascii_letters + string.digits) for i in range(LENGTH))
-        new_token = Token(value=token_value, role_id=role_id)
-        session.add(new_token)
-        session.commit()
-        return new_token
-
-    @staticmethod
-    def find(session, token_value: str) -> 'Token or None':
-        '''Внимание: перед попыткой обратиться к полям полученного объекта,
-        необходимо обязательно сделать проверку на None'''
-
-        token = session.query(Token).get(token_value)
-        if token and token.expires_date > datetime.now():
-            return token
-        return None
 
     @staticmethod
     def garbage_collector(session) -> None:
