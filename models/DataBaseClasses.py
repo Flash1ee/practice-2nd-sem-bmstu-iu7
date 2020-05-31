@@ -93,7 +93,7 @@ class User(Base):
 
         return ans
 
-    def appoint(self, session, role_id) -> None:
+    def appoint(self, session, role_id: int) -> None:
         '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value '''
         self.role_id = role_id
         session.commit()
@@ -274,16 +274,18 @@ class Ticket(Base):
         #print(joined[1].ticket.id, joined[1].ticket.client_id, joined[1].ticket.manager_id, joined[1].ticket.title, joined[1].ticket.start_date)
         #message = session.query(Message).filter(Message.id == 7)[0]
         #print(message.ticket.id, message.ticket.client_id, message.ticket.manager_id, message.ticket.title, message.ticket.start_date)
-        #print(message.ticket.manager_id)
-        
-        res = session.query(Message.ticket_id, func.max(Message.date)).group_by(Message.ticket_id).all()
+        # print(message.ticket.manager_id)
+
+        res = session.query(Message.ticket_id, func.max(
+            Message.date)).group_by(Message.ticket_id).all()
         ticks = []
         for a in res:
-            message = session.query(Message).filter(Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
+            message = session.query(Message).filter(
+                Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
             if message.sender_id != manager_id and message.ticket.manager_id == manager_id:
                 ticks.append(message.ticket_id)
 
-        #all_open_tickets = joined.filter(Ticket.close_date.is_(None)).filter(
+        # all_open_tickets = joined.filter(Ticket.close_date.is_(None)).filter(
         #    Ticket.manager_id == manager_id)
 
         return ticks
@@ -360,7 +362,8 @@ class Message(Base):
     @staticmethod
     def get(session, ticket_id: int, user_id: int):
         '''Получить список всеx сообщений user_id в данном ticket_id'''
-        return session.query(Message).filter(Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
+        return session.query(Message).filter(
+            Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
 
 
 class Token(Base):
@@ -401,9 +404,11 @@ class Token(Base):
             return token
         return None
 
+    @staticmethod
     def garbage_collector(session) -> None:
         '''Удаляет все токены из БД, срок которых истек'''
-        tokens = session.query(Token).filter(Token.expires_date < datetime.now()).all()
+        tokens = session.query(Token).filter(
+            Token.expires_date < datetime.now()).all()
         for token in tokens:
             session.delete(token)
         session.commit()
