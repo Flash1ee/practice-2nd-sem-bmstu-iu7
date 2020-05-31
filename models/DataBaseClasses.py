@@ -94,51 +94,36 @@ class User(Base):
         return ans
 
     def appoint(self, session, role_id: int) -> None:
-        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value '''
+        '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value 
+            Autocommit = ON
+        '''
         self.role_id = role_id
         session.commit()
 
     def demote_manager(self, session) -> None:
+        '''Autocommit = ON'''
         his_tickets = self.get_active_tickets(session)
 
         for ticket in his_tickets:
             new_manager = User.get_free_manager(session)
             ticket.appoint_to_manager(session, new_manager.id)
-
         self.role_id = RoleNames.CLIENT.value
         session.commit()
 
     def add(self, session) -> None:
+        '''Autocommit = ON'''
         session.add(self)
         session.commit()
 
-    def get_active_tickets(self, session) -> list:
-        tickets = []
-        if self.role_id == ADMIN:
-            tickets = session.query(Ticket).filter(
-                Ticket.close_date == None).all()
-        elif self.role_id == MANAGER:
-            tickets = session.query(Ticket).filter(
-                Ticket.manager_id == self.id).filter(Ticket.close_date == None).all()
-        elif self.role_id == CLIENT:
-            tickets = session.query(Ticket).filter(
-                Ticket.client_id == self.id).filter(Ticket.close_date == None).all()
-        else:
-            print("Invalid or blocked user")
-        return tickets
-
     def get_all_tickets(self, session) -> list:
-        tickets = []
-        if self.role_id == ADMIN:
+        if self.role_id == ADMIN.value:
             tickets = session.query(Ticket).all()
-        elif self.role_id == MANAGER:
+        elif self.role_id == MANAGER.value:
             tickets = session.query(Ticket).filter(
                 Ticket.manager_id == self.id).all()
-        elif self.role_id == CLIENT:
+        elif self.role_id == CLIENT.value:
             tickets = session.query(Ticket).filter(
                 Ticket.client_id == self.id).all()
-        else:
-            print("Invalid or blocked user")
         return tickets
 
     # Static methods
@@ -149,6 +134,7 @@ class User(Base):
         param session: current session,
         param user: [ (conversation, name, role_id), ...]
         role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
+        Autocommit = ON
         '''
         for user in users:
             session.add(
@@ -174,6 +160,10 @@ class User(Base):
 
     @staticmethod
     def change_name(session, new_name, user_id=None, user_conversation=None) -> None:
+        '''Ответственность за наличие пользователя с данным 
+            user_id/user_conversation в БД на вызывающей стороне
+            Autocommit = ON
+        '''
         if user_id:
             User.find_by_id(session, user_id).name = new_name
         elif user_conversation:
@@ -181,14 +171,13 @@ class User(Base):
                 session, user_conversation).name = new_name
         session.commit()
 
-    # TODO: UNTESTED
-    # ВНИМАНИЕ: тут теперь обрабатывается список отказавшихся!
+    # TODO: Бета версия. Обсуждаема доработка/переработка метода.
     @ staticmethod
-    def get_free_manager(session, refusal_list) -> 'User':
-        '''Поиск самого свободного менеджера'''
-        all_managers = User.get_all_users_with_role(
-            session, RoleNames.MANAGER.value)
-        managers_factor = []
+    def get_free_manager(session, refusal_list) -> 'User or None':
+        '''Возвращает самого свободного менеджера, отсутствующего в refusal_list
+        В случае, если все менеджеры есть в refusal_list, возвращает None'''
+        all_managers = dict.fromkeys(User.get_all_users_with_role(
+            session, RoleNames.MANAGER.value), None)        
 
         for manager in all_managers:
             if manager.id in refusal_list:
@@ -211,12 +200,14 @@ class User(Base):
 
             coef = k1 ** q1 + k2 ** q2 + k3 ** q3 + k4 ** q4
 
-            managers_factor.append(coef)
+            all_managers[manager] = coef
 
-        if len(managers_factor) == 0:
+        all_managers = {key:val for key, val in all_managers.items() if val != None}
+        
+        if not len(all_managers):
             return None
-        index = managers_factor.index(min(managers_factor))
-        return all_managers[index]
+        
+        return sorted(all_managers, key=all_managers.get)[0]
 
 
 class Ticket(Base):
@@ -378,8 +369,22 @@ class Token(Base):
     # Relationship
     role = relationship('Role', back_populates='tokens')
 
+
+    # Instance methods
+
+    def activate(self, session) -> None:
+        '''Активирует токен. (Удаляет из БД)
+        Ответственность за наличие токена в базе лежит на 
+        вызывающей стороне
+        '''
+        session.delete(self)
+        session.commit()
+
+    # Static methods
+
     @staticmethod
     def generate(session, role_id) -> 'Token':
+        '''Генерирует новый токен'''
         LENGTH = 12
         token_value = ''.join(random.choice(
             string.ascii_letters + string.digits) for i in range(LENGTH))
@@ -387,13 +392,6 @@ class Token(Base):
         session.add(new_token)
         session.commit()
         return new_token
-
-    @staticmethod
-    def activate(session, token_value: str) -> None:
-        '''Ответственность за наличие токена в базе лежит на 
-        вызывающей стороне'''
-        session.delete(session.query(Token).get(token_value))
-        session.commit()
 
     @staticmethod
     def find(session, token_value: str) -> 'Token or None':
