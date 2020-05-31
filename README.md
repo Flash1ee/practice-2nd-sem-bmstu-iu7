@@ -1,7 +1,7 @@
 # Репозиторий командной практики 4+1
 
 ## Презентация
-https://docs.google.com/presentation/d/1ZbUyarowXIFr3dnnkHVJTJlS24EzMiNQ9ePcBGha9DA/edit#slide=id.p1
+https://docs.google.com/presentation/d/1ZbUyarowXIFr3dnnkHVJTJlS24EzMiNQ9ePcBGha9DA/edit
 
 ## Описания работы
 Разработатка автоматизированной системы распределения сообщений от клиентов по менеджерам посредством телеграмм бота.
