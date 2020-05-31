@@ -243,11 +243,7 @@ def create_superuser(message):
         if my_token:
             user.appoint(session,my_token.role_id)
             my_token.activate(session, token_new)
-            if my_token.role_id == RoleNames.MANAGER.value:
-                role_to_print = "MANAGER"
-            else:
-                role_to_print = "ADMIN"
-            bot.send_message(message.chat.id, "Токен успешно активирован, ваша роль {}".format(role_to_print))
+            bot.send_message(message.chat.id, "Токен успешно активирован, ваша роль {}".format(RoleNames(my_token.role_id).name))
 
 
     
@@ -271,13 +267,13 @@ def create_manager(message):
 def create_admin(message):
     if (len(args)) != 2:
         bot.send_message(message.chat.id, "Много аргументов: команда должна выглядеть так /admin create")
-        return
-        token = id_generator()
-        bot.send_message(message.chat.id, token)
-        cur_time = time.strftime('%Y-%m-%d %H:%M:%S')
-        new_token = Token(value = token, role_id = 1, expires_date = cur_time)
-        session.add(new_token)
-        bot.send_message(message.chat.id, "Токен создан - срок действия 24 часа")
+    else:
+        user = User.find_by_conversation(session, conversation = message.chat.id)
+        if user.role_id != RoleNames.ADMIN.value:
+            bot.send_message(message.chat.id, "Извиите. У вас недостаточно прав, вы - {}".format(RoleNames(user.role_id).name))
+        else:
+            new_token = Token.generate(session, RoleNames.ADMIN.value)
+            bot.send_message(message.chat.id, "{}\nТокен создан - срок действия 24 часа".format(new_token.value))
 
 
 #TODO команды менеджера:
