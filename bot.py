@@ -106,12 +106,13 @@ def callback_handler(callback_query):
 def create_ticket(message):
     #я не знаю, правильно ли это работает с точки зения бд. Пока так
     #Обатите внимание на title в ticket
-    user = session.query(User).filter(User.id == message.chat.id)
+    #user = session.query(User).filter(User.id == message.chat.id)
+    user = User.find_by_conversation(session, message.chat.id)
     if not user:
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start.")
     else:
-        if user.role_id != 3:
+        if user.role_id != RoleNames.CLIENT.value:
             bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
         else:    
             ticket = generate_ticket()
@@ -124,14 +125,21 @@ def create_ticket(message):
 
 
 
-
+'''
+Изменил функцию, если что-то не так, торни меня
+01.06.2020 1:17 Дима
+'''
 #просмотр активных тикетов
-@bot.message_handler(commands = ["ticket_list"])
+@bot.message_handler(commands = [func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket list'])
 def active_ticket_list(message):
-    user = session.query(User).filter(User.id == message.from_user.id)
+    args = message.text.split()
+    #user = session.query(User).filter(User.id == message.from_user.id)
+    user = User.find_by_conversation(session, message.chat.id)
     if not user:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
+    elif len(args) != 2:
+        bot.send_message(message.chat.id, "Неверная команда, введите /ticket list")
     else:
         bot.send_message(message.chat.id, "Список активных тикетов:\n" + "\n".join(user.get_active_tickets))
 
@@ -301,7 +309,24 @@ def check_role(message):
         bot.send_message(message.chat.id, "Ваша текущая роль - {}".format(RoleNames(user.role_id).name)) 
 
 
+#удаление менеджера
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager remove')
+def manager_remove(message):
+    args = message.text.split()
+    user = User.find_by_conversation(session, conversation = message.chat.id)
+    manager_id = args[2]
+    if not user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+    elif len(args) != 3:
+        bot.send_message(message.chat.id, "Неверное использование команды. Шаблон: /manager list")
+    elif user.role_id != RoleNames.ADMIN.value:
+        bot.send_message(message.chat.id,"Извините, эта команда доступна только для администраторов приложения.")
+    else:
+        manager = User.find_by_conversation(session, manager_id)
+        bot.register_next_step_handler(message, confirm, manager, manager_id)
+        manager.demote_manager(session)
 
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
 
 #TODO команды менеджера:
 
@@ -317,11 +342,6 @@ def manager_answer(message):
 
 #Команды адмиинистратора:
 
-#получить список менеджеров
-@bot.message_handler(commands = ["manager_list"])
-def manager_list(message):
-    pass
-
 #удаление менеджера
 @bot.message_handler(commands = ["manager_remove"])
 def cancel(message):
@@ -334,7 +354,17 @@ def cancel(message):
 
 #подтверджение операции(удаления менеджера)
 @bot.message_handler(commands = ["confirm"])
-def confirm(message):
-    pass
+def confirm(message, *args):
+    keyboard = types.InlineKeyboardMarkup()
+    key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
+    keyboard.add(key_yes)
+    key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
+    keyboard.add(key_no)
+    bot.send_message(message.chat_id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
+@bot.callback_query_handler(func = lambda call: True)
+def caller_worker(call):
+    if call.data == "yes":
+
+
 
 bot.polling(none_stop=True)
