@@ -149,15 +149,16 @@ class User(Base):
         return session.query(User).filter(User.role_id == role_id).all()
 
     @staticmethod
-    def find_by_id(session, id: int) -> 'User':
+    def find_by_id(session, id: int) -> 'User or None':
         return session.query(User).get(id)
 
     @staticmethod
     def find_by_name(session, name: str) -> list:
+        '''Если не найдено ни одного пользователя - пустой список'''
         return session.query(User).filter(User.name == name).all()
 
     @staticmethod
-    def find_by_conversation(session, conversation: int) -> 'User':
+    def find_by_conversation(session, conversation: int) -> 'User or None':
         return session.query(User).filter(User.conversation == conversation).first()
 
     @staticmethod

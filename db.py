@@ -21,6 +21,15 @@ session = Session()
 
 Message.add(session, 'Blah-blah-blah', 1, 202)
 
+token_value = '0nLUJF4GPzRJ'
+
+find_token = Token.find(session, token_value)
+
+if find_token:
+    find_token.activate(session)
+else:
+    print("None")
+
 
 # session.add_all([
 #     Token(value='qW2dfglopsmk', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value),
