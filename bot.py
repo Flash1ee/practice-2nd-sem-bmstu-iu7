@@ -44,8 +44,7 @@ def start(message):
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
     args = message.text.split()
-    user = User.find_by_conversation(session, conversation = message.chat.id)
-    if not user:
+    if not User.find_by_conversation(session, conversation = message.chat.id):
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
     elif len(args) != 3:
         bot.send_message(message.chat.id, "Неправильное использование команды superuser.\nШаблон:/superuser init TOKEN")
@@ -78,23 +77,16 @@ def create_ticket(message):
         else:    
             bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
             bot.register_next_step_handler(message, get_title)
-
 def get_title(message):
-    ticket = 123456
-    title = message.text
     bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
+    Ticket.create(session, message.text, message.chat.id)
     bot.register_next_step_handler(message, get_ticket_body)
-
-def get_ticket_body(message, title):
+def get_ticket_body(message):
     bot.send_message(message.chat.id, "Ваш запрос обрабатывается...")
-    ticket = Ticket()
-    user = User.find_by_conversation(session, conversation = message.chat.id)
-    manager = user.get_free_manager()
-    if manager == None:
-        #TODO
-        pass
-    else:
-        ticket.add(manager.id)
+    user = User.find_by_conversation(session, message.chat.id)
+    ticket = user.get_active_tickets(session)
+    if sorted(ticket)[-1]:
+        #Message.add(session, message.text, ticket.id, message.chat.id)
 
 
 
