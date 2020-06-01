@@ -15,39 +15,36 @@ bot = telebot.TeleBot(token)
 
 
 #Обработка входа в систему.
-@bot.message_handler(commands =["start"])
+@bot.message_handler(commands = ["start"])
 def start(message):
-    username = message.from_user.first_name
+    username = message.chat.first_name
     chat_id = message.chat.id
     cur_role = None
     #если еще нет администраторов - назначаем администратором
     if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
         cur_role = RoleNames.ADMIN.value
-    #получаем юзера из бд
-    user = User.find_by_conversation(session, chat_id)
-    if not user:
-        #если не нашли в бд, назначаем клиентом автоматом
+    elif not User.find_by_conversation(session, chat_id):
         cur_role = RoleNames.CLIENT.value
-    #если роль назначена
+    #если назначена новая роль
     if cur_role:
         #добавляем сведения в бд
         client = User.add_several(session, [(chat_id, username, cur_role)])
-        bot.send_message(message.chat.id, "{}, Вы успешно зарегистрировались в системе.\nВаша статус - {}".format(username, RoleNames(cur_role).name))
+        bot.send_message(message.chat.id, "{}, Вы успешно зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(cur_role).name))
     else:
         #пользователь уже зарегистрирован
-        if User.find_by_conversation(session, message.chat.id).name.lower() != username.lower():
-            User.change_name(session, username, user_id = chat_id)
+        user = User.find_by_conversation(session, message.chat.id)
+        if user.name.lower() != username.lower():
+            user.change_name(session, username, user_id = chat_id)
         bot.send_message(message.chat.id, "{}, Вы уже зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(user.role_id).name))
 
         
 
 
-
+#вход в систему менеджера/админа
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
     args = message.text.split()
-    user = User.find_by_conversation(session, conversation = message.chat.id)
-    if not user:
+    if not User.find_by_conversation(session, conversation = message.chat.id):
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
     elif len(args) != 3:
         bot.send_message(message.chat.id, "Неправильное использование команды superuser.\nШаблон:/superuser init TOKEN")
@@ -60,6 +57,8 @@ def create_superuser(message):
             user.appoint(session,my_token.role_id)
             my_token.activate(session, token_new)
             bot.send_message(message.chat.id, "Токен успешно активирован, ваша роль {}.".format(RoleNames(my_token.role_id).name))
+        else:
+            bot.send_message(message.chat.id, "Не удалось авторизоваться в системе. Попробуйте еще раз.")
 
 
 
@@ -78,23 +77,16 @@ def create_ticket(message):
         else:    
             bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
             bot.register_next_step_handler(message, get_title)
-
 def get_title(message):
-    ticket = generate_ticket()
-    title = message.text
     bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
+    Ticket.create(session, message.text, message.chat.id)
     bot.register_next_step_handler(message, get_ticket_body)
-
-def get_ticket_body(message, title):
+def get_ticket_body(message):
     bot.send_message(message.chat.id, "Ваш запрос обрабатывается...")
-    ticket = Ticket()
-    user = User.find_by_conversation(session, conversation = message.chat.id)
-    manager = user.get_free_manager()
-    if manager == None:
-        #TODO
-        pass
-    else:
-        ticket.add(manager.id)
+    user = User.find_by_conversation(session, message.chat.id)
+    ticket = user.get_active_tickets(session)
+    if sorted(ticket)[-1]:
+        #Message.add(session, message.text, ticket.id, message.chat.id)
 
 
 

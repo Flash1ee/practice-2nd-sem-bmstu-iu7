@@ -19,6 +19,31 @@ Base.metadata.create_all(engine)
 session = Session()
 
 
+Message.add(session, 'Blah-blah-blah', 1, 202)
+
+token_value = '0nLUJF4GPzRJ'
+
+find_token = Token.find(session, token_value)
+
+if find_token:
+    find_token.activate(session)
+else:
+    print("None")
+
+
+# session.add_all([
+#     Token(value='qW2dfglopsmk', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value),
+#     Token(value='qW2df7sf5df4', expires_date=datetime.now(), role_id=RoleNames.MANAGER.value),
+#     Token(value='qW2sdflklkf3', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value),
+#     Token(value='qW2dfgldf6s4', expires_date=datetime.now(), role_id=RoleNames.MANAGER.value),
+#     Token(value='qW2dfglopsfs', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value)
+#     ])
+
+# User.add
+
+# user1 = User.find_by_id(session, 7)
+# User.change_name(session, 'NewName', user1.id)
+# Token.garbage_collector(session)
 # session.add_all([
 #     Ticket(manager_id=3, client_id=7, title='Ticket3'),
 #     Ticket(manager_id=3, client_id=6, title='Ticket2'),
@@ -245,3 +270,6 @@ session = Session()
 
 #print(Ticket.get_unprocessed_tickets(session, 17))
 #print(Ticket.get_unprocessed_tickets(session, 18))
+#Ticket.create(session, "Create_test", conversation=196)
+#Ticket.create(session, "Create_test_2", client_id=19)
+

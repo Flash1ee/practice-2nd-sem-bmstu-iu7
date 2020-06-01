@@ -149,15 +149,16 @@ class User(Base):
         return session.query(User).filter(User.role_id == role_id).all()
 
     @staticmethod
-    def find_by_id(session, id: int) -> 'User':
+    def find_by_id(session, id: int) -> 'User or None':
         return session.query(User).get(id)
 
     @staticmethod
     def find_by_name(session, name: str) -> list:
+        '''Если не найдено ни одного пользователя - пустой список'''
         return session.query(User).filter(User.name == name).all()
 
     @staticmethod
-    def find_by_conversation(session, conversation: int) -> 'User':
+    def find_by_conversation(session, conversation: int) -> 'User or None':
         return session.query(User).filter(User.conversation == conversation).first()
 
     @staticmethod
@@ -189,18 +190,21 @@ class User(Base):
             unprocessed_tickets = Ticket.get_unprocessed_tickets(
                 session, manager.id)
             lastWeekCloseTickets = Ticket.get_closed_tickets_by_time(
-                session, manager_id, 7)
-            lastWeekBlockedTickets = Ticket.blocked_tickets_by_time(
-                session, manager_id, 7)
+                session, manager.id, 7)
+            lastWeekBlockedTickets = Ticket.get_blocked_tickets_by_time(
+                session, manager.id, 7)
 
             k1 = len(unprocessed_tickets)
             k2 = len(active_tickets)
-            k3 = len(lastWeekCloseTicket) / 7
-            k4 = len(lastWeekBlockedTicket) / 7
+            k3 = len(lastWeekCloseTickets) / 7
+            k4 = len(lastWeekBlockedTickets) / 7
 
-            q1, q2, q3, q4 = 2, 1, 1, -1
+            q1, q2, q3 = 2, 1, 1
 
-            coef = k1 ** q1 + k2 ** q2 + k3 ** q3 + k4 ** q4
+            coef = k1 ** q1 + k2 ** q2 + k3 ** q3
+
+            if k4 > 1: 
+                coef /= k4
 
             all_managers[manager] = coef
 
@@ -285,47 +289,46 @@ class Ticket(Base):
 
         return ticks
 
-    def appoint_to_manager(self, session, new_manager_id):
-        manager = session.query(User).get(new_manager_id)
-        if manager != None and manager.role_id == RoleNames.MANAGER.value:
-            self.manager_id = new_manager_id
-            return 0
-        else:
-            print("Manager not found")
-            return 1
-
-    def add(self, session, manager_id):
-        if self.appoint_to_manager(session, manager_id) == 0:
-            session.add(self)
-            session.commit()
-        else:
-            print("Couldn't add the ticket")
-
     def get_all_messages(self, session):
         return session.query(Message).filter(Message.ticket_id == self.id).all()
 
-    def put_refuse_data(self, session, reason):
+    # UNTESTED
+    def reappoint(self, session, reason):
         new_blocked = BlockedTicket(
             ticket_id=self.id, manager_id=self.manager_id, reason=reason)
-        session.add(new_blocked)
-        session.commit()
 
-    # TODO: UNTESTED
-    def reappoint(self, session):
         refusal_list = [bt.manager_id for bt in session.query(BlockedTicket).filter(
             BlockedTicket.ticket_id == self.id).all()]
 
+        rc = 0
         new_manager = User.get_free_manager(session, refusal_list)
+
         if new_manager is None:
-            print("Everybody refused")
-            return False    # пока это будет сигналом админу, что все отказались
-        self.appoint_to_manager(session, new_manager.id)
+            new_manager = User.get_free_manager(session, [])
+            rc = 1    # подаем сигнал админу, что от этого тикета уже все отказались
+
+        self.manager_id = new_manager.id
+        session.add(new_blocked)
         session.commit()
-        return True
+        return rc
 
     def close(self, session):
         self.close_date = datetime.now()
         session.commit()
+
+    # TODO: UNTESTED
+    @staticmethod
+    def create(session, title, conversation):
+        new_ticket = Ticket(title=title)
+
+        client = session.query(User).filter(User.conversation == conversation)[0]
+        new_ticket.client_id = client.id
+            
+        manager = User.get_free_manager(session, [])
+        new_ticket.manager_id = manager.id
+        session.add(new_ticket)
+        session.commit()
+        return 0
 
 
 class BlockedTicket(Base):
@@ -360,6 +363,16 @@ class Message(Base):
         return session.query(Message).filter(
             Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
 
+    @staticmethod
+    def add(session, body: str, ticket_id: int, sender_conversation: int):
+        '''Добавить сообщение в базу'''
+
+        sender_id = User.find_by_conversation(session, sender_conversation).id
+
+        session.add(Message(ticket_id=ticket_id, sender_id=sender_id, body=body))
+        session.commit()
+    
+
 
 class Token(Base):
     __tablename__ = 'tokens'
@@ -387,6 +400,24 @@ class Token(Base):
     @staticmethod
     def generate(session, role_id) -> 'Token':
         '''Генерирует новый токен'''
+        LENGTH = 12
+        token_value = ''.join(random.choice(
+            string.ascii_letters + string.digits) for i in range(LENGTH))
+        new_token = Token(value=token_value, role_id=role_id)
+        session.add(new_token)
+        session.commit()
+        return new_token
+
+    @staticmethod
+    def find(session, token_value: str) -> 'Token or None':
+        '''Внимание: перед попыткой обратиться к полям полученного объекта,
+        необходимо обязательно сделать проверку на None'''
+
+        token = session.query(Token).get(token_value)
+        if token and token.expires_date > datetime.now():
+            return token
+        return None
+
 
     @staticmethod
     def garbage_collector(session) -> None:
