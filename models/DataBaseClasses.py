@@ -189,14 +189,14 @@ class User(Base):
             unprocessed_tickets = Ticket.get_unprocessed_tickets(
                 session, manager.id)
             lastWeekCloseTickets = Ticket.get_closed_tickets_by_time(
-                session, manager_id, 7)
-            lastWeekBlockedTickets = Ticket.blocked_tickets_by_time(
-                session, manager_id, 7)
+                session, manager.id, 7)
+            lastWeekBlockedTickets = Ticket.get_blocked_tickets_by_time(
+                session, manager.id, 7)
 
             k1 = len(unprocessed_tickets)
             k2 = len(active_tickets)
-            k3 = len(lastWeekCloseTicket) / 7
-            k4 = len(lastWeekBlockedTicket) / 7
+            k3 = len(lastWeekCloseTickets) / 7
+            k4 = len(lastWeekBlockedTickets) / 7
 
             q1, q2, q3, q4 = 2, 1, 1, -1
 
@@ -285,47 +285,56 @@ class Ticket(Base):
 
         return ticks
 
-    def appoint_to_manager(self, session, new_manager_id):
-        manager = session.query(User).get(new_manager_id)
-        if manager != None and manager.role_id == RoleNames.MANAGER.value:
-            self.manager_id = new_manager_id
-            return 0
-        else:
-            print("Manager not found")
-            return 1
-
-    def add(self, session, manager_id):
-        if self.appoint_to_manager(session, manager_id) == 0:
-            session.add(self)
-            session.commit()
-        else:
-            print("Couldn't add the ticket")
-
     def get_all_messages(self, session):
         return session.query(Message).filter(Message.ticket_id == self.id).all()
 
-    def put_refuse_data(self, session, reason):
+    # UNTESTED
+    def reappoint(self, session, reason):
         new_blocked = BlockedTicket(
             ticket_id=self.id, manager_id=self.manager_id, reason=reason)
-        session.add(new_blocked)
-        session.commit()
 
-    # TODO: UNTESTED
-    def reappoint(self, session):
         refusal_list = [bt.manager_id for bt in session.query(BlockedTicket).filter(
             BlockedTicket.ticket_id == self.id).all()]
 
+        rc = 0
         new_manager = User.get_free_manager(session, refusal_list)
+
         if new_manager is None:
-            print("Everybody refused")
-            return False    # пока это будет сигналом админу, что все отказались
-        self.appoint_to_manager(session, new_manager.id)
+            new_manager = User.get_free_manager(session, [])
+            rc = 1    # подаем сигнал админу, что от этого тикета уже все отказались
+
+        self.manager_id = new_manager.id
+        session.add(new_blocked)
         session.commit()
-        return True
+        return rc
 
     def close(self, session):
         self.close_date = datetime.now()
         session.commit()
+
+    # TODO: UNTESTED
+    @staticmethod
+    def create(session, title, client_id = None, conversation = None):
+        new_ticket = Ticket(title=title)
+
+        if client_id is None and conversation is None:
+            return 1
+
+        if client_id is None:
+            client = session.query(User).filter(User.conversation == conversation)[0]
+            new_ticket.client_id = client.id
+
+        elif conversation is None:
+            new_ticket.client_id = client_id
+
+        else:
+            return 1
+            
+        manager = User.get_free_manager(session, [])
+        new_ticket.manager_id = manager.id
+        session.add(new_ticket)
+        session.commit()
+        return 0
 
 
 class BlockedTicket(Base):
