@@ -31,6 +31,7 @@ else:
     print("None")
 
 
+
 # session.add_all([
 #     Token(value='qW2dfglopsmk', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value),
 #     Token(value='qW2df7sf5df4', expires_date=datetime.now(), role_id=RoleNames.MANAGER.value),
