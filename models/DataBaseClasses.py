@@ -370,13 +370,13 @@ class Message(Base):
             Message.ticket_id == ticket_id).filter(Message.sender_id == user_id).all()
 
     @staticmethod
-    def add(session, body: str, ticket_id: int, conversation: int):
+    def add(session, body: str, ticket_id: int, sender_conversation: int):
         '''Добавить сообщение в базу'''
 
         sender_id = User.find_by_conversation(session, conversation).id
 
         session.add(Message(ticket_id=ticket_id, sender_id=sender_id, body=body))
-        session.commit()
+        session.commit(),
     
 
 
