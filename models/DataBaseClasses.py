@@ -373,7 +373,7 @@ class Message(Base):
     def add(session, body: str, ticket_id: int, sender_conversation: int):
         '''Добавить сообщение в базу'''
 
-        sender_id = User.find_by_conversation(session, conversation).id
+        sender_id = User.find_by_conversation(session, sender_conversation).id
 
         session.add(Message(ticket_id=ticket_id, sender_id=sender_id, body=body))
         session.commit(),
