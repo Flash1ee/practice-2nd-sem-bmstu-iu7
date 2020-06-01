@@ -387,6 +387,24 @@ class Token(Base):
     @staticmethod
     def generate(session, role_id) -> 'Token':
         '''Генерирует новый токен'''
+        LENGTH = 12
+        token_value = ''.join(random.choice(
+            string.ascii_letters + string.digits) for i in range(LENGTH))
+        new_token = Token(value=token_value, role_id=role_id)
+        session.add(new_token)
+        session.commit()
+        return new_token
+
+    @staticmethod
+    def find(session, token_value: str) -> 'Token or None':
+        '''Внимание: перед попыткой обратиться к полям полученного объекта,
+        необходимо обязательно сделать проверку на None'''
+
+        token = session.query(Token).get(token_value)
+        if token and token.expires_date > datetime.now():
+            return token
+        return None
+
 
     @staticmethod
     def garbage_collector(session) -> None:
