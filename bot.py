@@ -17,8 +17,8 @@ bot = telebot.TeleBot(token)
 #Обработка входа в систему.
 @bot.message_handler(commands = ["start"])
 def start(message):
-    username = message.from_user.first_name
-    chat_id = message.from_user.id
+    username = message.chat.first_name
+    chat_id = message.chat.id
     cur_role = None
     #если еще нет администраторов - назначаем администратором
     if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
