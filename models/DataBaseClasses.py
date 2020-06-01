@@ -198,9 +198,12 @@ class User(Base):
             k3 = len(lastWeekCloseTickets) / 7
             k4 = len(lastWeekBlockedTickets) / 7
 
-            q1, q2, q3, q4 = 2, 1, 1, -1
+            q1, q2, q3 = 2, 1, 1
 
-            coef = k1 ** q1 + k2 ** q2 + k3 ** q3 + k4 ** q4
+            coef = k1 ** q1 + k2 ** q2 + k3 ** q3
+
+            if k4 > 1: 
+                coef /= k4
 
             all_managers[manager] = coef
 
