@@ -102,13 +102,11 @@ def active_ticket_list(message):
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     else:
         ans = ''
-        #найти время
         tickets = session.query(Ticket).filter(User.conversation == message.chat.id).all()
-        print()
         for x in user.get_active_tickets(session):
             ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
             if x.manager_id == None:
-                ans += "Поиск менеджера..." + '\n'
+                ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
             else:
                 ans += x.manager_id + '\n'
             ans += "Start data: " + str(tickets[0].start_date) + '\n\n'
