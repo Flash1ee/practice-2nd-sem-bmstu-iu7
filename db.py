@@ -19,6 +19,22 @@ Base.metadata.create_all(engine)
 session = Session()
 
 
+Message.add(session, 'Blah-blah-blah', 1, 202)
+
+
+# session.add_all([
+#     Token(value='qW2dfglopsmk', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value),
+#     Token(value='qW2df7sf5df4', expires_date=datetime.now(), role_id=RoleNames.MANAGER.value),
+#     Token(value='qW2sdflklkf3', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value),
+#     Token(value='qW2dfgldf6s4', expires_date=datetime.now(), role_id=RoleNames.MANAGER.value),
+#     Token(value='qW2dfglopsfs', expires_date=datetime.now(), role_id=RoleNames.ADMIN.value)
+#     ])
+
+# User.add
+
+# user1 = User.find_by_id(session, 7)
+# User.change_name(session, 'NewName', user1.id)
+# Token.garbage_collector(session)
 # session.add_all([
 #     Ticket(manager_id=3, client_id=7, title='Ticket3'),
 #     Ticket(manager_id=3, client_id=6, title='Ticket2'),
