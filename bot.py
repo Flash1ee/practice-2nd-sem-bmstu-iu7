@@ -79,15 +79,40 @@ def create_ticket(message):
             bot.register_next_step_handler(message, get_title)
 def get_title(message):
     bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
-    Ticket.create(session, message.text, message.chat.id)
+    title = message.text
+    conversation = message.chat.id
+    Ticket.create(session, title, conversation)
     bot.register_next_step_handler(message, get_ticket_body)
 def get_ticket_body(message):
     bot.send_message(message.chat.id, "Ваш запрос обрабатывается...")
     user = User.find_by_conversation(session, message.chat.id)
-    ticket = user.get_active_tickets(session)
-    if sorted(ticket)[-1]:
-        #Message.add(session, message.text, ticket.id, message.chat.id)
+    ticket = user.get_active_tickets(session)[0]
+    #теперь нужно назначить менеджера
+    manager = User.get_free_manager(session)
+    if manager:
+        Message.add(session, message.text, ticket.id, message.chat.id)
 
+
+#просмотр активных тикетов
+@bot.message_handler(commands = ["ticket_list"])
+def active_ticket_list(message):
+    user = User.find_by_conversation(session, conversation = message.chat.id)
+    if not user:
+        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /start или /superuser_init.")
+    else:
+        ans = ''
+        #найти время
+        tickets = session.query(Ticket).filter(User.conversation == message.chat.id).all()
+        print()
+        for x in user.get_active_tickets(session):
+            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
+            if x.manager_id == None:
+                ans += "Поиск менеджера..." + '\n'
+            else:
+                ans += x.manager_id + '\n'
+            ans += "Start data: " + str(tickets[0].start_date) + '\n\n'
+        bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
 
 
 #cоздание кастомной клавиатуры
@@ -143,19 +168,6 @@ def callback_handler(callback_query):
         #TODO нужно это как-то отловить из бд messages ответ на это сообщение либо придумать какую-то форму ввода
 '''
 
-
-
-
-
-#просмотр активных тикетов
-@bot.message_handler(commands = ["ticket_list"])
-def active_ticket_list(message):
-    user = session.query(User).filter(User.id == message.from_user.id)
-    if not user:
-        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /start или /superuser_init.")
-    else:
-        bot.send_message(message.chat.id, "Список активных тикетов:\n" + "\n".join(user.get_active_tickets))
 
 
 
