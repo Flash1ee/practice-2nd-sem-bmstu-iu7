@@ -261,3 +261,6 @@ Message.add(session, 'Blah-blah-blah', 1, 202)
 
 #print(Ticket.get_unprocessed_tickets(session, 17))
 #print(Ticket.get_unprocessed_tickets(session, 18))
+#Ticket.create(session, "Create_test", conversation=196)
+#Ticket.create(session, "Create_test_2", client_id=19)
+
