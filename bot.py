@@ -48,8 +48,8 @@ def create_superuser(message):
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
     elif len(args) != 3:
         bot.send_message(message.chat.id, "Неправильное использование команды superuser.\nШаблон:/superuser init TOKEN")
-    elif len(args[2]) != 6:
-        bot.send_message(message.chat.id, "Неправильный размер токена.")
+    elif not Token.find(session, args[2]):
+        bot.send_message(message.chat.id, "Данного токена нет, возможно, вы ошиблись.")
     else:
         token_new = args[2]
         my_token = Token.find(session, token_new)
@@ -85,7 +85,7 @@ def get_ticket_body(message):
     bot.send_message(message.chat.id, "Ваш запрос обрабатывается...")
     user = User.find_by_conversation(session, message.chat.id)
     ticket = user.get_active_tickets(session)
-    if sorted(ticket)[-1]:
+    #if sorted(ticket)[-1]:
         #Message.add(session, message.text, ticket.id, message.chat.id)
 
 
@@ -172,11 +172,11 @@ def create_ticket(message):
 
 
 '''
-Изменил функцию, если что-то не так, торни меня
-01.06.2020 1:17 Дима
-'''
+#Изменил функцию, если что-то не так, торни меня
+#01.06.2020 1:17 Дима
+
 #просмотр активных тикетов
-@bot.message_handler(commands = [func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket list'])
+@bot.message_handler(func= lambda message: " ".join(message.text.split()[0:2]) == '/ticket list')
 def active_ticket_list(message):
     args = message.text.split()
     #user = session.query(User).filter(User.id == message.from_user.id)
@@ -244,16 +244,19 @@ def create_manager(message):
 
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
 def create_admin(message):
+    args = message.text.split()
     user = User.find_by_conversation(session, conversation = message.chat.id)
+    print(user)
     if not user:
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
     elif (len(args)) != 2:
-        bot.send_message(message.chat.id, "Много аргументов: команда должна выглядеть так /admin create")
+       bot.send_message(message.chat.id, "Много аргументов: команда должна выглядеть так /admin create")
     else:
         if user.role_id != RoleNames.ADMIN.value:
             bot.send_message(message.chat.id, "Извиите. У вас недостаточно прав, вы - {}".format(RoleNames(user.role_id).name))
         else:
             new_token = Token.generate(session, RoleNames.ADMIN.value)
+            print("GGG")
             bot.send_message(message.chat.id, "{}\nТокен создан - срок действия 24 часа".format(new_token.value))
 
 
@@ -273,7 +276,8 @@ def get_manager_list(message):
             bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
             "/manager create")
         else:
-            bot.send_message(message.chat.id, "\n".join(managers))
+            for i in enumerate(managers):
+                bot.send_message(message.chat.id, "№{} Имя - {}, id - {}".format(i[0] + 1,i[1].name, i[1].conversation))
 
 @bot.message_handler(commands = ["role"])
 def check_role(message):
@@ -283,28 +287,45 @@ def check_role(message):
     else:
         bot.send_message(message.chat.id, "Ваша текущая роль - {}".format(RoleNames(user.role_id).name)) 
 
-
+'''
+#TODO TOMMOROW
+@bot.message_handler(content_types = ['text'])
+def confirm(args):
+    print(args) 
+    keyboard = types.InlineKeyboardMarkup()
+    key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
+    keyboard.add(key_yes)
+    key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
+    keyboard.add(key_no)
+    bot.send_message(args[0].chat.id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
+    @bot.callback_query_handler(func = lambda call: True)
+    def caller_worker(call):
+        if call.data == "yes":
+            args[1].demote_manager(session)
+            bot.send_message(args[0].chat.id, "Менеджер с id {} удалён".format(args[2]))
+        elif call.data == "no":
+            bot.send_message(args[0].chat.id, "Отменяем операцию удаления")
 #удаление менеджера
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager remove')
 def manager_remove(message):
     args = message.text.split()
     user = User.find_by_conversation(session, conversation = message.chat.id)
-    manager_id = args[2]
     if not user:
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
     elif len(args) != 3:
-        bot.send_message(message.chat.id, "Неверное использование команды. Шаблон: /manager list")
+        bot.send_message(message.chat.id, "Неверное использование команды. Шаблон: /manager remove <manager id>")
     elif user.role_id != RoleNames.ADMIN.value:
         bot.send_message(message.chat.id,"Извините, эта команда доступна только для администраторов приложения.")
     else:
+        manager_id = args[2]
         manager = User.find_by_conversation(session, manager_id)
-        bot.register_next_step_handler(message, confirm, manager, manager_id)
-        manager.demote_manager(session)
-
-        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+        if not manager:
+            bot.send_message(message.chat.it, "Менеджеров с таким id не найдено в базе данных.")
+        else:
+            bot.register_next_step_handler([message, manager, manager_id], confirm)
+'''
 
 #TODO команды менеджера:
-
 #отказ менеджера от тикета
 @bot.message_handler(commands = ["ticket_refuse"])
 def ticket_refuse(message):
@@ -317,29 +338,10 @@ def manager_answer(message):
 
 #Команды адмиинистратора:
 
-#удаление менеджера
-@bot.message_handler(commands = ["manager_remove"])
-def cancel(message):
-    pass
 
 #отмена операции(удаления менеджера)
 @bot.message_handler(commands = ["cancel"])
 def cancel(message):
     pass
-
-#подтверджение операции(удаления менеджера)
-@bot.message_handler(commands = ["confirm"])
-def confirm(message, *args):
-    keyboard = types.InlineKeyboardMarkup()
-    key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
-    keyboard.add(key_yes)
-    key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
-    keyboard.add(key_no)
-    bot.send_message(message.chat_id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
-@bot.callback_query_handler(func = lambda call: True)
-def caller_worker(call):
-    if call.data == "yes":
-
-
 
 bot.polling(none_stop=True)
