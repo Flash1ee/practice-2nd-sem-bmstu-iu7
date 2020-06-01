@@ -317,21 +317,11 @@ class Ticket(Base):
 
     # TODO: UNTESTED
     @staticmethod
-    def create(session, title, client_id = None, conversation = None):
+    def create(session, title, conversation):
         new_ticket = Ticket(title=title)
 
-        if client_id is None and conversation is None:
-            return 1
-
-        if client_id is None:
-            client = session.query(User).filter(User.conversation == conversation)[0]
-            new_ticket.client_id = client.id
-
-        elif conversation is None:
-            new_ticket.client_id = client_id
-
-        else:
-            return 1
+        client = session.query(User).filter(User.conversation == conversation)[0]
+        new_ticket.client_id = client.id
             
         manager = User.get_free_manager(session, [])
         new_ticket.manager_id = manager.id
