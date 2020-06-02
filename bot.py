@@ -113,8 +113,7 @@ def get_ticket_body(message):
 @bot.message_handler(commands = ["ticket_list"])
 def active_ticket_list(message):
     user = User.find_by_conversation(session, conversation = message.chat.id)
-    print(user)
-    if not user:
+    if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif user.role_id == 3:
@@ -126,7 +125,7 @@ def active_ticket_list(message):
             if x.manager_id == None:
                 ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
             else:
-                ans += x.manager_id + '\n'
+                ans += "Manager_id: " + str(x.manager_id) + '\n'
             ans += "Start data: " + str(x.start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     elif user.role_id == 2:
@@ -135,7 +134,7 @@ def active_ticket_list(message):
         for x in user.get_active_tickets(session):
             ans += 'Ticket id: ' + str(x.id) + '\n'
             ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
-            ans += x.client_id + '\n'
+            ans += "Cleint_id: " + str(x.client_id) + '\n'
             ans += "Start data: " + str(x.start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     else:
@@ -147,8 +146,8 @@ def active_ticket_list(message):
             if x.manager_id == None:
                 ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
             else:
-                ans += x.manager_id + '\n'
-            ans += x.client_id + '\n'
+                ans += str(x.manager_id) + '\n'
+            ans += "Cleint_id: " + str(x.client_id) + '\n'
             ans += "Start data: " + str(x.start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
 
@@ -156,27 +155,41 @@ def active_ticket_list(message):
 
 
 
-'''@bot.message_handler(commands = ["ticket"])
+@bot.message_handler(commands = ["ticket_id"])
 def chose_ticket(message):
     user = User.find_by_conversation(session, message.chat.id)
-    if not user:
+    if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif user.role_id == 3:
         #для клиента - это выбор тикета для переписки
         bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Чтобы посмотреть список "\
                          "активных тикетов, Вы можете воспользоваться командой /ticket_list.")
-        #bot.register_next_step_handler(message, switch_for_client)
+        bot.register_next_step_handler(message, switch_for_client)
     elif user.role_id == 2:
         #для менеджера - информация о тикете и история переписки
         bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите просмотреть. Чтобы посмотреть список "\
                          "активных тикетов, Вы можете воспользоваться командой /ticket_list.")
     else:
+        bot.register_next_step_handler(message, switch_for_client)
         bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Для просмотра активных "\
-                         "тикетов Вы можете воспользоваться командой /ticket_list.")
-        #TODO Как отловить это сообщение?'''
+                         "тикетов Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
 
 
+def switch_for_client(message):
+    if message.text == "/ticket_list":
+        active_ticket_list(message)
+    else:
+        ticket_id = message.text
+        #корректность тикета:
+        all_tickets = session.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if all_tickets == None:
+            bot.send_message(message.chat.id, "Введен некоторектный ticket_id. Пожалуйста, попробуйте еще раз.")
+        else:
+            user = User.find_by_conversation(session, message.chat.id)
+            user.manager_id = all_tickets.manager_id
+            bot.send_message(message.chat.id, "Тикет успешно выбран. В ближайшем времени с Вами свяжется менеджер.")
+            #TODO торкнуть менеджера
 
 
 
