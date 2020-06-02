@@ -333,7 +333,7 @@ def create_admin(message):
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
 def get_manager_list(message):
     args = message.text.split()
-    user = User.find_by_conversation(session, conversation = message.chat.id)
+    user = User.find_by_conversation(session, message.chat.id)
     if not user:
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
     elif len(args) != 2:
@@ -357,24 +357,8 @@ def check_role(message):
     else:
         bot.send_message(message.chat.id, "Ваша текущая роль - {}".format(RoleNames(user.role_id).name)) 
 
-'''
+
 #TODO TOMMOROW
-@bot.message_handler(content_types = ['text'])
-def confirm(args):
-    print(args) 
-    keyboard = types.InlineKeyboardMarkup()
-    key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
-    keyboard.add(key_yes)
-    key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
-    keyboard.add(key_no)
-    bot.send_message(args[0].chat.id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
-    @bot.callback_query_handler(func = lambda call: True)
-    def caller_worker(call):
-        if call.data == "yes":
-            args[1].demote_manager(session)
-            bot.send_message(args[0].chat.id, "Менеджер с id {} удалён".format(args[2]))
-        elif call.data == "no":
-            bot.send_message(args[0].chat.id, "Отменяем операцию удаления")
 #удаление менеджера
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager remove')
 def manager_remove(message):
@@ -387,13 +371,30 @@ def manager_remove(message):
     elif user.role_id != RoleNames.ADMIN.value:
         bot.send_message(message.chat.id,"Извините, эта команда доступна только для администраторов приложения.")
     else:
+        global manager_id
         manager_id = args[2]
         manager = User.find_by_conversation(session, manager_id)
         if not manager:
             bot.send_message(message.chat.it, "Менеджеров с таким id не найдено в базе данных.")
         else:
-            bot.register_next_step_handler([message, manager, manager_id], confirm)
-'''
+            msg = bot.send_message(message.chat.id, "Необходимо подтвердить действие.")
+            bot.register_next_step_handler(msg, confirm)
+def confirm(msg):
+    keyboard = types.InlineKeyboardMarkup()
+    key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
+    keyboard.add(key_yes)
+    key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
+    keyboard.add(key_no)
+    bot.send_message(msg.chat.id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
+    @bot.callback_query_handler(func = lambda call: True)
+    def caller_worker(call):
+        global manager_id
+        manager = User.find_by_conversation(session, manager_id) 
+        if call.data == "yes":
+            manager.demote_manager(session)
+            bot.send_message(msg.chat.id, "Менеджер с id {} удалён".format(manager_id))
+        elif call.data == "no":
+            bot.send_message(msg.chat.id, "Отменяем операцию удаления")
 
 #TODO команды менеджера:
 #отказ менеджера от тикета
