@@ -26,7 +26,6 @@ def start(message):
         #добавляем сведения в бд
         User.add_several(session, [(chat_id, username, cur_role)])
         bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
-
     else:
         #пользователь уже зарегистрирован
         user = User.find_by_conversation(session, chat_id)
