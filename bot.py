@@ -68,7 +68,7 @@ def create_superuser(message):
 #открытие нового тикета
 @bot.message_handler(commands = ["ticket_add"])
 def create_ticket(message):
-    user = User.find_by_conversation(session, conversation = message.chat.id)
+    user = User.find_by_conversation(session, message.chat.id)
     if not user:
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start.")
@@ -114,13 +114,115 @@ def active_ticket_list(message):
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
 
 
-#cоздание кастомной клавиатуры
+
+#просмотр активных тикетов
+@bot.message_handler(commands = ["ticket_list"])
+def active_ticket_list(message):
+    user = User()
+    user = user.find_by_conversation(session, conversation = message.chat.id)
+    if user == None:
+        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /start или /superuser_init.")
+    elif user.role_id == 3:
+        #для клиента - вывод активных тикетов(или всех?TODO)
+        ans = ''
+        for x in user.get_active_tickets(session):
+            ans += 'Ticket id: ' + str(x.id) + '\n'
+            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
+            if x.manager_id == None:
+                ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
+            else:
+                ans += "Manager_id: " + str(x.manager_id) + '\n'
+            ans += "Start data: " + str(x.start_date) + '\n\n'
+        bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
+    elif user.role_id == 2:
+        #для менеджера - активные прикрепленные тикеты + client_id
+        ans = ''
+        for x in user.get_active_tickets(session):
+            ans += 'Ticket id: ' + str(x.id) + '\n'
+            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
+            ans += "Client_id: " + str(x.client_id) + '\n'
+            ans += "Start data: " + str(x.start_date) + '\n\n'
+        bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
+    else:
+        #для администратора - активные тикеты всех менеджеров(видимо)
+        ans = ''
+        for x in user.get_active_tickets(session):
+            ans += 'Ticket id: ' + str(x.id) + '\n'
+            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
+            if x.manager_id == None:
+                ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
+            else:
+                ans += str(x.manager_id) + '\n'
+            ans += "Client_id: " + str(x.client_id) + '\n'
+            ans += "Start data: " + str(x.start_date) + '\n\n'
+        bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
+
+
+
+
+
+@bot.message_handler(commands = ["ticket_id"])
+def chose_ticket(message):
+    user = User.find_by_conversation(session, message.chat.id)
+    if user == None:
+        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
+                         "системе. Воспользуйтесь командой /start или /superuser_init.")
+    elif user.role_id == 3:
+        #для клиента - это выбор тикета для переписки
+        bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Чтобы посмотреть список "\
+                         "активных тикетов, Вы можете воспользоваться командой /ticket_list.")
+        bot.register_next_step_handler(message, switch_for_client)
+    elif user.role_id == 2:
+        #для менеджера - информация о тикете и история переписки
+        bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите просмотреть. Чтобы посмотреть список "\
+                         "активных тикетов, Вы можете воспользоваться командой /ticket_list.")
+        bot.register_next_step_handler(message, switch_for_superuser)
+    else:
+        bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Для просмотра активных "\
+                         "тикетов Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
+        bot.register_next_step_handler(message, switch_for_superuser)
+def switch_for_client(message):
+    if message.text == "/ticket_list":
+        active_ticket_list(message)
+    else:
+        if Ticket.get_by_id(session, message.text) == None:
+            bot.send_message(message.chat.id, "Введен некоторектный ticket_id. Пожалуйста, попробуйте еще раз.")
+        else:
+            #User.find_by_conversation(session, message.chat.id).manager_id = ticket.manager_id
+            bot.send_message(message.chat.id, "Тикет успешно выбран. В ближайшем времени с Вами свяжется менеджер.")
+            #TODO торкнуть менеджера
+def switch_for_superuser(message):
+    if message.text == "/ticket_list":
+        active_ticket_list(message)
+    else:
+        #ticket = Ticket.get_by_id(session, message.text).first()
+        if Ticket.get_by_id(session, message.text) == None:
+            bot.send_message(message.chat.id, "Введен некорректный ticket_id. Пожалуйста, попробуйте еще раз.")
+        else:
+            ans = "Информация для ticket_id " + ticket_id + ":\n\n"
+            ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
+            if ticket.manager_id == None:
+                ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
+            else:
+                ans += str(ticket.manager_id) + '\n'
+            ans += "Client_id: " + str(ticket.client_id) + '\n'
+            ans += "Start data: " + str(ticket.start_date) + '\n\n'
+            ans += "История переписки:\n\n"
+            all_messages = ticket.get_all_messages
+            for x in all_messages:
+                ans += str(x.date) + "\n"
+                role = User.find_by_id(session, x.sender_id)
+                ans += RoleNames(role).name + ": " + x.body + "\n\n"
+            bot.send_message(message.chat.id, ans)
+
+'''#cоздание кастомной клавиатуры
 def create_su_init_keyboard(buttons):
     keyboard = types.InlineKeyboardMarkup(row_width = 3)
     for x in buttons:
         keyboard.add(types.InlineKeyboardButton(text = x, callback_data = x))
     return keyboard
-
+'''
 
 #вход в систему: менеджер/админ
 '''
@@ -170,63 +272,7 @@ def callback_handler(callback_query):
 
 
             
- '''       
-#открытие нового тикета
-@bot.message_handler(commands = ["ticket_add"])
-def create_ticket(message):
-    #я не знаю, правильно ли это работает с точки зения бд. Пока так
-    #Обатите внимание на title в ticket
-    #user = session.query(User).filter(User.id == message.chat.id)
-    user = User.find_by_conversation(session, message.chat.id)
-    if not user:
-        bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /start.")
-    else:
-        if user.role_id != RoleNames.CLIENT.value:
-            bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
-        else:    
-            ticket = generate_ticket()
-            bot.send_message(message.chat.id, Person.name + ", опишите ваш вопрос:")
-            session.add(Ticket(id = ticket, manager_id = None, client_id = message.from_user.id, \
-                               title = "Зачем он нужен? Дальше сообщение ловить надо.", \
-                               start_date = time.strftime('%Y-%m-%d %H:%M:%S'), close_date = None))
-            session.commit()
-
 '''
-
-
-'''
-#Изменил функцию, если что-то не так, торни меня
-#01.06.2020 1:17 Дима
-
-#просмотр активных тикетов
-@bot.message_handler(func= lambda message: " ".join(message.text.split()[0:2]) == '/ticket list')
-def active_ticket_list(message):
-    args = message.text.split()
-    #user = session.query(User).filter(User.id == message.from_user.id)
-    user = User.find_by_conversation(session, message.chat.id)
-    if not user:
-        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /start или /superuser_init.")
-    elif len(args) != 2:
-        bot.send_message(message.chat.id, "Неверная команда, введите /ticket list")
-    else:
-        bot.send_message(message.chat.id, "Список активных тикетов:\n" + "\n".join(user.get_active_tickets))
-
-
-
-
-
-@bot.message_handler(commands = ["ticket"])
-def chose_ticket(message):
-    user = session.query(User).filter(User.id == message.from_user.id)
-    if not user:
-        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /start или /superuser_init.")
-    else:
-        bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Для просмотра активных "\
-                         "тикетов Вы можете воспользоваться командой /ticket_list.")
-        #TODO Как отловить это сообщение?
 
 
 
