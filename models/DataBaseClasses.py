@@ -99,14 +99,15 @@ class User(Base):
         '''
         self.role_id = role_id
         session.commit()
-
+        
+    # TODO fix Ticket.reappoint(reason!!!)
     def demote_manager(self, session) -> None:
         '''Autocommit = ON'''
         his_tickets = self.get_active_tickets(session)
 
         for ticket in his_tickets:
-            new_manager = User.get_free_manager(session)
-            ticket.appoint_to_manager(session, new_manager.id)
+            ticket.reappoint(session, "Менеджер удален")
+
         self.role_id = RoleNames.CLIENT.value
         session.commit()
 
@@ -132,17 +133,16 @@ class User(Base):
     def add_several(session, users: list) -> None:
         '''
         param session: current session,
-        param user: [ (conversation, name, role_id), ...]
+        param user: [ (conversation, name, role_id), ... ]
         role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
         Autocommit = ON
         '''
         for user in users:
-            session.add(
-                User(conversation=user[0], name=user[1], role_id=user[2]))
+            session.add(User(conversation=user[0], name=user[1], role_id=user[2]))
         session.commit()
 
     @staticmethod
-    def get_all_users_with_role(session, role_id) -> list:
+    def get_all_users_with_role(session, role_id: int) -> list:
         '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value 
         (В случае, если нет ни одного User, вернет пустой list)
         '''
@@ -162,16 +162,12 @@ class User(Base):
         return session.query(User).filter(User.conversation == conversation).first()
 
     @staticmethod
-    def change_name(session, new_name, user_id=None, user_conversation=None) -> None:
+    def change_name(session, new_name, user_conversation) -> None:
         '''Ответственность за наличие пользователя с данным 
-            user_id/user_conversation в БД на вызывающей стороне
+            user_conversation в БД на вызывающей стороне
             Autocommit = ON
         '''
-        if user_id:
-            User.find_by_id(session, user_id).name = new_name
-        elif user_conversation:
-            User.find_by_conversation(
-                session, user_conversation).name = new_name
+        User.find_by_conversation(session, user_conversation).name = new_name
         session.commit()
 
     # TODO: Бета версия. Обсуждаема доработка/переработка метода.

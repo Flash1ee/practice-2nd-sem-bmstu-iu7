@@ -1,13 +1,7 @@
-import telebot
 import json
-from db import session
-from models.DataBaseClasses import User, Token
-import string 
-import random
-import time
-from telebot import apihelper
-from telebot import types
+from db import session 
 from models.DataBaseClasses import *
+import telebot
 
 cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
@@ -28,14 +22,15 @@ def start(message):
     #если назначена новая роль
     if cur_role:
         #добавляем сведения в бд
-        client = User.add_several(session, [(chat_id, username, cur_role)])
-        bot.send_message(message.chat.id, "{}, Вы успешно зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(cur_role).name))
+        User.add_several(session, [(chat_id, username, cur_role)])
+        bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
     else:
         #пользователь уже зарегистрирован
-        user = User.find_by_conversation(session, message.chat.id)
+        user = User.find_by_conversation(session, chat_id)
+        cur_role = user.role_id
         if user.name.lower() != username.lower():
-            user.change_name(session, username, user_id = chat_id)
-        bot.send_message(message.chat.id, "{}, Вы уже зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(user.role_id).name))
+            user.change_name(session, username, chat_id)
+        bot.send_message(chat_id, f'{username}, Вы уже зарегистрировались в системе.\nВаш статус - {RoleNames(user.role_id).name}')
 
         
 
