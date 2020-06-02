@@ -13,10 +13,65 @@ from models.DataBaseClasses import *
 pymysql.install_as_MySQLdb()
 
 config = json.load(open("./config.json"))
-engine = create_engine(config['database']['url'], echo=False)
+engine = create_engine(config['database']['url'], echo=False, connect_args={'connect_timeout': 600000}, pool_timeout=6000000, pool_size=0)
 Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 session = Session()
+
+# chat_id = 339306576
+# username = 'Дмитрий'
+# import telebot
+# import json
+# from db import session 
+# from telebot import apihelper
+# from telebot import types
+# from models.DataBaseClasses import *
+
+# token = config['bot']['token']
+# bot = telebot.TeleBot(token)
+
+# def start():
+#     cur_role = None
+#     #если еще нет администраторов - назначаем администратором
+#     if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
+#         cur_role = RoleNames.ADMIN.value
+#     elif not User.find_by_conversation(session, chat_id):
+#         cur_role = RoleNames.CLIENT.value
+#     #если назначена новая роль
+#     if cur_role:
+#         #добавляем сведения в бд
+#         User.add_several(session, [(chat_id, username, cur_role)])
+#         print(f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
+#         bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
+#     else:
+#         #пользователь уже зарегистрирован
+#         user = User.find_by_conversation(session, chat_id)
+#         cur_role = user.role_id
+#         if user.name.lower() != username.lower():
+#             user.change_name(session, username, chat_id)
+#         print(f'{username}, Вы уже зарегистрировались в системе.\nВаш статус - {RoleNames(user.role_id).name}')
+#         bot.send_message(chat_id, f'{username}, Вы уже зарегистрировались в системе.\nВаш статус - {RoleNames(user.role_id).name}')
+
+
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
+# start()
 
 # Role.init_roles(session)
 # # user = User.find_by_conversation(session, )
@@ -71,7 +126,7 @@ session = Session()
 #     Ticket(manager_id=5, client_id=6, title='Ticket7'),
 #     Ticket(manager_id=5, client_id=7, title='Ticket8'),
 #     Ticket(manager_id=5, client_id=8, title='Ticket9'),
-#     Ticket(manager_id=3, client_id=9, title='Ticket10'),
+    # Ticket(manager_id=3, client_id=9, title='Ticket10'),
 #     Ticket(manager_id=3, client_id=10, title='Ticket11'),
 #     Ticket(manager_id=3, client_id=6, title='Ticket12'),
 #     Ticket(manager_id=4, client_id=7, title='Ticket13'),

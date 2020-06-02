@@ -1,9 +1,7 @@
-import telebot
 import json
 from db import session 
-from telebot import apihelper
-from telebot import types
 from models.DataBaseClasses import *
+import telebot
 
 cfg = json.load(open("config.json"))
 token = cfg['bot']['token']

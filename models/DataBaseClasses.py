@@ -137,8 +137,7 @@ class User(Base):
         Autocommit = ON
         '''
         for user in users:
-            session.add(
-                User(conversation=user[0], name=user[1], role_id=user[2]))
+            session.add(User(conversation=user[0], name=user[1], role_id=user[2]))
         session.commit()
 
     @staticmethod
