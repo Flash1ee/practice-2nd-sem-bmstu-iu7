@@ -335,7 +335,7 @@ class Ticket(Base):
 
     @staticmethod
     def get_by_id(session, ticket_id):
-        return session.query(Ticket).get(id)
+        return session.query(Ticket).get(ticket_id)
 
 
 class BlockedTicket(Base):
