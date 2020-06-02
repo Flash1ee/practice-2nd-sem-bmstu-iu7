@@ -19,16 +19,22 @@ Base.metadata.create_all(engine)
 session = Session()
 
 
-Message.add(session, 'Blah-blah-blah', 1, 202)
+# Message.add(session, 'Blah-blah-blah', 1, 202)
 
-token_value = '0nLUJF4GPzRJ'
+# token_value = '0nLUJF4GPzRJ'
 
-find_token = Token.find(session, token_value)
+# find_token = Token.find(session, token_value)
 
-if find_token:
-    find_token.activate(session)
-else:
-    print("None")
+# if find_token:
+#     find_token.activate(session)
+# else:
+#     print("None")
+
+token = Token.generate(session, RoleNames.ADMIN.value)
+token2 = Token.generate(session, RoleNames.ADMIN.value)
+
+print(f'value: {token.value}, role: {token.role_id}')
+print(f'value: {token2.value}, role: {token2.role_id}')
 
 
 
