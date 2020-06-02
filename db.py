@@ -20,6 +20,7 @@ session = Session()
 
 
 # Message.add(session, 'Blah-blah-blah', 1, 202)
+#Message.add(session, 'Blah-blah-blah', 1, 202)
 
 # token_value = '0nLUJF4GPzRJ'
 
@@ -35,6 +36,10 @@ token2 = Token.generate(session, RoleNames.ADMIN.value)
 
 print(f'value: {token.value}, role: {token.role_id}')
 print(f'value: {token2.value}, role: {token2.role_id}')
+if find_token:
+    find_token.activate(session)
+#else:
+    #print("None")
 
 
 
