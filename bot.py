@@ -2,6 +2,7 @@ import json
 from db import session 
 from models.DataBaseClasses import *
 import telebot
+from telebot import types
 
 cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
@@ -339,7 +340,7 @@ def get_manager_list(message):
         managers = User.get_all_users_with_role(session, RoleNames.MANAGER.value)
         if not managers:
             bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
-            "/manager create")
+            " /manager create")
         else:
             for i in enumerate(managers):
                 bot.send_message(message.chat.id, "№{} Имя - {}, id - {}".format(i[0] + 1,i[1].name, i[1].conversation))
@@ -370,26 +371,23 @@ def manager_remove(message):
         manager_id = args[2]
         manager = User.find_by_conversation(session, manager_id)
         if not manager:
-            bot.send_message(message.chat.it, "Менеджеров с таким id не найдено в базе данных.")
+            bot.send_message(message.chat.id, "Менеджеров с таким id не найдено в базе данных.")
         else:
-            msg = bot.send_message(message.chat.id, "Необходимо подтвердить действие.")
-            bot.register_next_step_handler(msg, confirm)
-def confirm(msg):
-    keyboard = types.InlineKeyboardMarkup()
-    key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
-    keyboard.add(key_yes)
-    key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
-    keyboard.add(key_no)
-    bot.send_message(msg.chat.id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
-    @bot.callback_query_handler(func = lambda call: True)
-    def caller_worker(call):
-        global manager_id
-        manager = User.find_by_conversation(session, manager_id) 
-        if call.data == "yes":
-            manager.demote_manager(session)
-            bot.send_message(msg.chat.id, "Менеджер с id {} удалён".format(manager_id))
-        elif call.data == "no":
-            bot.send_message(msg.chat.id, "Отменяем операцию удаления")
+            keyboard = types.InlineKeyboardMarkup()
+            key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
+            keyboard.add(key_yes)
+            key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
+            keyboard.add(key_no)
+            bot.send_message(message.chat.id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
+            @bot.callback_query_handler(func = lambda call: True)
+            def caller_worker(call):
+                global manager_id
+                manager = User.find_by_conversation(session, manager_id) 
+                if call.data == "yes":
+                    manager.demote_manager(session)
+                    bot.send_message(message.chat.id, "Менеджер с id {} удалён".format(manager_id))
+                elif call.data == "no":
+                    bot.send_message(message.chat.id, "Отменяем операцию удаления")
 
 #TODO команды менеджера:
 #отказ менеджера от тикета
