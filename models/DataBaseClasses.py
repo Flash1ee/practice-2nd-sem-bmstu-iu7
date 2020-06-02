@@ -333,6 +333,10 @@ class Ticket(Base):
         session.commit()
         return 0
 
+    @staticmethod
+    def get_by_id(session, ticket_id):
+        return session.query(Ticket).get(id)
+
 
 class BlockedTicket(Base):
     __tablename__ = 'blocked_tickets'
