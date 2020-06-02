@@ -325,6 +325,9 @@ class Ticket(Base):
         new_ticket.client_id = client.id
             
         manager = User.get_free_manager(session, [])
+        # если менеджеров нет вообще
+        if manager is None:
+            return 1
         new_ticket.manager_id = manager.id
         session.add(new_ticket)
         session.commit()

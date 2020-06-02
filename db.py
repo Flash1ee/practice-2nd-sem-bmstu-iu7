@@ -18,7 +18,7 @@ Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 session = Session()
 
-
+'''
 Message.add(session, 'Blah-blah-blah', 1, 202)
 
 token_value = '0nLUJF4GPzRJ'
@@ -29,7 +29,7 @@ if find_token:
     find_token.activate(session)
 else:
     print("None")
-
+'''
 
 
 # session.add_all([
@@ -271,6 +271,6 @@ else:
 
 #print(Ticket.get_unprocessed_tickets(session, 17))
 #print(Ticket.get_unprocessed_tickets(session, 18))
-#Ticket.create(session, "Create_test", conversation=196)
+Ticket.create(session, "Create_test_2", 100)
 #Ticket.create(session, "Create_test_2", client_id=19)
 
