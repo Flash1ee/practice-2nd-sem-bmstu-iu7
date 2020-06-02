@@ -21,10 +21,10 @@ def start(message):
     chat_id = message.chat.id
     cur_role = None
     #если еще нет администраторов - назначаем администратором
-    print(User.get_all_users_with_role(session, RoleNames.ADMIN.value))
-    if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
+    user = User()
+    if not user.get_all_users_with_role(session, RoleNames.ADMIN.value):
         #если нет никого из юзеров и этого пользователя нет в бд - назначаем админом
-        if User.find_by_conversation(session, chat_id) == None:
+        if user.find_by_conversation(session, chat_id) == None:
             cur_role = RoleNames.ADMIN.value
         #если нет админов, но есть другие юзеры, назначаем админом того, кто обратился.
         else:
@@ -32,7 +32,7 @@ def start(message):
             user.role_id = 1
             cur_role = 1
             user.add(session)
-    elif User.find_by_conversation(session, chat_id) == None:
+    elif user.find_by_conversation(session, chat_id) == None:
         cur_role = RoleNames.CLIENT.value
     #если назначена новая роль
     if cur_role:
@@ -112,7 +112,8 @@ def get_ticket_body(message):
 #просмотр активных тикетов
 @bot.message_handler(commands = ["ticket_list"])
 def active_ticket_list(message):
-    user = User.find_by_conversation(session, conversation = message.chat.id)
+    user = User()
+    user = user.find_by_conversation(session, conversation = message.chat.id)
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -181,12 +182,12 @@ def switch_for_client(message):
     else:
         ticket_id = message.text
         #корректность тикета:
-        all_tickets = session.query(Ticket).filter(Ticket.id == ticket_id and Ticket.client_id == message.chat.id).first()
-        if all_tickets == None:
+        ticket = session.query(Ticket).filter(Ticket.id == ticket_id and Ticket.client_id == message.chat.id).first()
+        if ticket == None:
             bot.send_message(message.chat.id, "Введен некоторектный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
             user = User.find_by_conversation(session, message.chat.id)
-            user.manager_id = all_tickets.manager_id
+            user.manager_id = ticket.manager_id
             bot.send_message(message.chat.id, "Тикет успешно выбран. В ближайшем времени с Вами свяжется менеджер.")
             #TODO торкнуть менеджера
 def switch_for_superuser(message):
@@ -195,14 +196,30 @@ def switch_for_superuser(message):
     else:
         ticket_id = message.text
         #корректность тикета:
-        all_tickets = session.query(Ticket).filter(Ticket.id == ticket_id).first()
-        if all_tickets == None:
+        ticket = session.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if ticket == None:
             bot.send_message(message.chat.id, "Введен некоторектный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
             user = User.find_by_conversation(session, message.chat.id)
-            user.manager_id = all_tickets.manager_id
-            bot.send_message(message.chat.id, "Тикет успешно выбран. В ближайшем времени с Вами свяжется менеджер.")
-            #TODO торкнуть менеджера
+            ans = "Информация для ticket_id " + ticket_id + ":\n\n"
+            ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
+            if ticket.manager_id == None:
+                ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
+            else:
+                ans += str(ticket.manager_id) + '\n'
+            ans += "Client_id: " + str(ticket.client_id) + '\n'
+            ans += "Start data: " + str(ticket.start_date) + '\n\n'
+            ans += "История переписки:\n\n"
+            all_messages = session.query(Message).filter(Ticket.id == ticket.id)
+            user = User()
+            for x in all_messages:
+                find_id = x.sender_id
+                user = session.query(User).filter(User.id == find_id).first()
+                ans += str(x.date) + "\n"
+                ans += RoleNames(user.role_id).name + ": " + x.body + "\n\n"
+            bot.send_message(message.chat.id, ans)
+
+
 
 
 
@@ -224,6 +241,8 @@ def close_ticket(message):
 
 
 
+
+
     
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
@@ -239,6 +258,8 @@ def create_manager(message):
         else:
             new_token = Token.generate(session, RoleNames.MANAGER.value)
             bot.send_message(message.chat.id, "{}\nТокен создан - срок действия 24 часа".format(new_token.value))
+
+
 
 
 
@@ -264,6 +285,8 @@ def create_admin(message):
 
 
 
+
+
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
 def get_manager_list(message):
     args = message.text.split()
@@ -282,6 +305,8 @@ def get_manager_list(message):
         else:
             for i in enumerate(managers):
                 bot.send_message(message.chat.id, "№{} Имя - {}, id - {}".format(i[0] + 1,i[1].name, i[1].conversation))
+
+
 
 
 
