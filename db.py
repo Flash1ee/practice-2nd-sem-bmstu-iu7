@@ -19,7 +19,7 @@ Base.metadata.create_all(engine)
 session = Session()
 
 
-Message.add(session, 'Blah-blah-blah', 1, 202)
+#Message.add(session, 'Blah-blah-blah', 1, 202)
 
 token_value = '0nLUJF4GPzRJ'
 
@@ -27,8 +27,8 @@ find_token = Token.find(session, token_value)
 
 if find_token:
     find_token.activate(session)
-else:
-    print("None")
+#else:
+    #print("None")
 
 
 

@@ -116,12 +116,12 @@ class User(Base):
         session.commit()
 
     def get_all_tickets(self, session) -> list:
-        if self.role_id == ADMIN.value:
+        if self.role_id == RoleNames.ADMIN.value:
             tickets = session.query(Ticket).all()
-        elif self.role_id == MANAGER.value:
+        elif self.role_id == RoleNames.MANAGER.value:
             tickets = session.query(Ticket).filter(
                 Ticket.manager_id == self.id).all()
-        elif self.role_id == CLIENT.value:
+        elif self.role_id == RoleNames.CLIENT.value:
             tickets = session.query(Ticket).filter(
                 Ticket.client_id == self.id).all()
         return tickets
