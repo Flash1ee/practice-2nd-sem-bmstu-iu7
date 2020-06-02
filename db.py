@@ -18,6 +18,13 @@ Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 session = Session()
 
+# Role.init_roles(session)
+# # user = User.find_by_conversation(session, )
+
+# print(User.get_all_users_with_role(session, RoleNames.ADMIN.value))
+
+# pprint(user)
+
 # Message.add(session, 'Blah-blah-blah', 1, 202)
 #Message.add(session, 'Blah-blah-blah', 1, 202)
 

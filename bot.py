@@ -1,10 +1,6 @@
 import telebot
 import json
-from db import session
-from models.DataBaseClasses import User, Token
-import string 
-import random
-import time
+from db import session 
 from telebot import apihelper
 from telebot import types
 from models.DataBaseClasses import *
@@ -21,21 +17,23 @@ def start(message):
     chat_id = message.chat.id
     cur_role = None
     #если еще нет администраторов - назначаем администратором
-    if not len(User.get_all_users_with_role(session, RoleNames.ADMIN.value)):
+    if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
         cur_role = RoleNames.ADMIN.value
     elif not User.find_by_conversation(session, chat_id):
         cur_role = RoleNames.CLIENT.value
     #если назначена новая роль
     if cur_role:
         #добавляем сведения в бд
-        client = User.add_several(session, [(chat_id, username, cur_role)])
-        bot.send_message(chat_id, "{}, Вы успешно зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(cur_role).name))
+        User.add_several(session, [(chat_id, username, cur_role)])
+        bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
+
     else:
         #пользователь уже зарегистрирован
         user = User.find_by_conversation(session, chat_id)
+        cur_role = user.role_id
         if user.name.lower() != username.lower():
             user.change_name(session, username, chat_id)
-        bot.send_message(chat_id, "{}, Вы уже зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(user.role_id).name))
+        bot.send_message(chat_id, f'{username}, Вы уже зарегистрировались в системе.\nВаш статус - {RoleNames(user.role_id).name}')
 
         
 
