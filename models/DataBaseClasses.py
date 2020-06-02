@@ -99,14 +99,15 @@ class User(Base):
         '''
         self.role_id = role_id
         session.commit()
-
+        
+    # TODO fix Ticket.reappoint(reason!!!)
     def demote_manager(self, session) -> None:
         '''Autocommit = ON'''
         his_tickets = self.get_active_tickets(session)
 
         for ticket in his_tickets:
-            new_manager = User.get_free_manager(session)
-            ticket.appoint_to_manager(session, new_manager.id)
+            ticket.reappoint(session, "Менеджер удален")
+
         self.role_id = RoleNames.CLIENT.value
         session.commit()
 
