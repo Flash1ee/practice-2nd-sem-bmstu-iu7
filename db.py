@@ -30,13 +30,13 @@ session = Session()
 # else:
 #     print("None")
 
-token = Token.generate(session, RoleNames.ADMIN.value)
-token2 = Token.generate(session, RoleNames.ADMIN.value)
+#token = Token.generate(session, RoleNames.ADMIN.value)
+#token2 = Token.generate(session, RoleNames.ADMIN.value)
 
-print(f'value: {token.value}, role: {token.role_id}')
-print(f'value: {token2.value}, role: {token2.role_id}')
-if find_token:
-    find_token.activate(session)
+#print(f'value: {token.value}, role: {token.role_id}')
+#print(f'value: {token2.value}, role: {token2.role_id}')
+#if find_token:
+    #find_token.activate(session)
 #else:
     #print("None")
 
@@ -281,6 +281,6 @@ if find_token:
 
 #print(Ticket.get_unprocessed_tickets(session, 17))
 #print(Ticket.get_unprocessed_tickets(session, 18))
-Ticket.create(session, "Create_test_2", 100)
+#Ticket.create(session, "Create_test_2", 100)
 #Ticket.create(session, "Create_test_2", client_id=19)
 
