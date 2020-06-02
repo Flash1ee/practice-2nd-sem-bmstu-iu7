@@ -21,7 +21,7 @@ def start(message):
     chat_id = message.chat.id
     cur_role = None
     #если еще нет администраторов - назначаем администратором
-    if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
+    if not len(User.get_all_users_with_role(session, RoleNames.ADMIN.value)):
         cur_role = RoleNames.ADMIN.value
     elif not User.find_by_conversation(session, chat_id):
         cur_role = RoleNames.CLIENT.value
@@ -29,13 +29,13 @@ def start(message):
     if cur_role:
         #добавляем сведения в бд
         client = User.add_several(session, [(chat_id, username, cur_role)])
-        bot.send_message(message.chat.id, "{}, Вы успешно зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(cur_role).name))
+        bot.send_message(chat_id, "{}, Вы успешно зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(cur_role).name))
     else:
         #пользователь уже зарегистрирован
-        user = User.find_by_conversation(session, message.chat.id)
+        user = User.find_by_conversation(session, chat_id)
         if user.name.lower() != username.lower():
-            user.change_name(session, username, user_id = chat_id)
-        bot.send_message(message.chat.id, "{}, Вы уже зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(user.role_id).name))
+            user.change_name(session, username, chat_id)
+        bot.send_message(chat_id, "{}, Вы уже зарегистрировались в системе.\nВаш статус - {}".format(username, RoleNames(user.role_id).name))
 
         
 
