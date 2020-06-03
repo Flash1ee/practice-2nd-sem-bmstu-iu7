@@ -127,6 +127,12 @@ class User(Base):
                 Ticket.client_id == self.id).all()
         return tickets
 
+    def identify_ticket(self, session) -> int:
+        last_message = session.query(Message).filter_by(sender_id = self.id).order_by(desc(Message.date)).first()
+        last_ticket_id = last_message.ticket_id
+        return last_ticket_id
+
+
     # Static methods
 
     @staticmethod
