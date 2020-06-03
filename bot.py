@@ -409,7 +409,7 @@ def ticket_refuse(message):
             message.chat.id, "Неверное использование команды. Шаблон: /ticket refuse <ticket id>")
     elif User.find_by_conversation(session, message.chat.id).role_id != RoleNames.MANAGER.value:
         bot.send_message(message.chat.id, f"Извините, ваша роль не позволяет воспользоваться командой, \
-            нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(session, message.chat.id).role_id)).name}")
+            нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(session, message.chat.id).role_id).name}")
     elif not Ticket.get_by_id(session, args[2]):
         bot.send_message(
             message.chat.id, "Извините, номер данного тикета не найден в базе")
