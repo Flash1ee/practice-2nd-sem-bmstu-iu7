@@ -192,7 +192,7 @@ def chose_ticket(message):
         bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Чтобы посмотреть список "\
                          "активных тикетов, Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
         bot.register_next_step_handler(message, switch_for_client)
-    else
+    else:
         bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите просмотреть. Для просмотра активных "\
                          "тикетов Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
         bot.register_next_step_handler(message, switch_for_superuser)
@@ -258,7 +258,7 @@ def ticket_close(message):
     ticket.close(session)
 
 
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create'))
 def create_manager(message):
     args = message.text.split()
     user = message.user
