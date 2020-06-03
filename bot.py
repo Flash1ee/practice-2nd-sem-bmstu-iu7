@@ -85,9 +85,12 @@ def get_ticket_body(message):
     user = User.find_by_conversation(session, message.chat.id)
     ticket = user.get_active_tickets(session)[0]
     #теперь нужно назначить менеджера
-    manager = User.get_free_manager(session)
+    manager = User.get_free_manager(session, [])
     if manager:
         Message.add(session, message.text, ticket.id, message.chat.id)
+        bot.send_message(message.chat.id, "Ваш вопрос отправлен менеджеру, спасибо.")
+    else:
+        bot.send_message(message.chat.id, "Извините, свободных менеджеров нет, повторите попытку позже.")
 
 
 #просмотр активных тикетов
@@ -192,11 +195,11 @@ def switch_for_superuser(message):
     if message.text == "/ticket_list":
         active_ticket_list(message)
     else:
-        #ticket = Ticket.get_by_id(session, message.text).first()
+        ticket = Ticket.get_by_id(session, message.text)
         if Ticket.get_by_id(session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некорректный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
-            ans = "Информация для ticket_id " + ticket_id + ":\n\n"
+            ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
             ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
             if ticket.manager_id == None:
                 ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
@@ -205,70 +208,12 @@ def switch_for_superuser(message):
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             ans += "Start data: " + str(ticket.start_date) + '\n\n'
             ans += "История переписки:\n\n"
-            all_messages = ticket.get_all_messages
+            all_messages = ticket.get_all_messages(session)
             for x in all_messages:
                 ans += str(x.date) + "\n"
                 role = User.find_by_id(session, x.sender_id)
                 ans += RoleNames(role).name + ": " + x.body + "\n\n"
             bot.send_message(message.chat.id, ans)
-
-'''#cоздание кастомной клавиатуры
-def create_su_init_keyboard(buttons):
-    keyboard = types.InlineKeyboardMarkup(row_width = 3)
-    for x in buttons:
-        keyboard.add(types.InlineKeyboardButton(text = x, callback_data = x))
-    return keyboard
-'''
-
-#вход в систему: менеджер/админ
-'''
-@bot.message_handler(commands = ["superuser_init"])
-def superuser_init(message):
-    user = session.query(User).filter(User.id == message.from_user.id)
-    keyboard = create_keyboard("Manager", "Admin")
-    bot.send_message(message.chat.id, "Добро пожаловать в систему. Выберите свой статус:", reply_markup=keyboard)
-
-#инициализация (не вход!!!)
-#TODO должна быть другая функция декоратора, потому что будет несколько клавиатур
-@bot.callback_query_handler(func = lambda x: True)
-def callback_handler(callback_query):
-    message = callback_query.message
-    text = callback_query.data
-    if text == "Manager":
-        manager = session.query(User).filter(User.id == message.from_user.id)
-        if not manager:
-            bot.send_message(message.chat.id, "Для начала работы необходимо зарегистрироваться "\
-                             "в системе с помощью команды /start.")
-        elif manager.role_id == 2:
-            bot.send_message(message.chat.id, "Вы уже значитесь в списке менеджеров. Для входа в систему " \
-                             "в качестве менеджера воспользуйтесь командой /superuser_enter.")
-            #добавить функцию superuser_enter, чтобы разграничить вход и инициализацию
-        else:
-            bot.send_message(message.chat.id, 'Ваш запрос передан администраторам приложения. В скором времени Вам придет '\
-                             'соответствующая инструкция.')
-    elif text == "Admin":
-        admin = session.query(User).filter(User.id == message.from_user.id)
-        if not admin:
-            #если это первый суперюзер - присвоить случайный токен. Действуем по принципу "кто успеет" (?)
-            #Значит администратор первый. Присваиваем случайно токен.
-            token = generate_token()
-            session.add(Token(value = token, expires_date = time.strftime('%Y-%m-%d %H:%M:%S'), role_id = 1))
-            session.add(User(id = message.from_user.id, conversation = None, name = message.from_user.first_name, role_id = 1))
-            session.commit()
-        elif admin.role_id == 1:
-            bot.send_message(message.chat.id, "Вы уже значитесь в списке администраторов. Для входа в систему " \
-                             "в качестве администратора воспользуйтесь командой /superuser_enter.")
-            #добавить функцию superuser_enter, чтобы разграничить вход и инициализацию
-        else:
-            bot.send_message(message.chat.id, 'Ваш запрос передан администраторам приложения. В скором времени Вам придет '\
-                             'соответствующая инструкция.')
-        #TODO нужно это как-то отловить из бд messages ответ на это сообщение либо придумать какую-то форму ввода
-
-
-
-
-            
-'''
 
 
 
@@ -391,9 +336,20 @@ def manager_remove(message):
 
 #TODO команды менеджера:
 #отказ менеджера от тикета
-@bot.message_handler(commands = ["ticket_refuse"])
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket refuse')
 def ticket_refuse(message):
-    pass
+    args = message.text.split()
+    if len(args) != 3:
+        bot.send_message(message.chat.id, "Неверное использование команды. Шаблон: /ticket refuse <ticket id>")
+    elif User.find_by_conversation(session, message.chat.id).role_id != RoleNames.MANAGER.value:
+        bot.send_message(message.chat.id, "Извините, ваша роль не позволяет воспользоваться командой, \
+            нужно быть manager/nВаша роль {}".format(RoleNames(User.find_by_conversation(session, message.chat.id).role_id)).name)
+    elif not Ticket.get_by_id(session, args[2]):
+        bot.send_message(message.chat.id, "Извините, номер данного тикета не найден в базе")
+
+    else:
+        user = User.find_by_conversation(session, message.chat.id)
+
 
 #ответ менеджера на тикет
 @bot.message_handler(commands = ["message"])
