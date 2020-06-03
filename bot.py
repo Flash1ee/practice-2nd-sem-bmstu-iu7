@@ -8,6 +8,27 @@ cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
+from telebot import apihelper
+apihelper.ENABLE_MIDDLEWARE = True
+
+@bot.middleware_handler(update_types=['message'])
+def auth_middleware(bot_instance, message):
+    """
+        Авторизация пользователя
+    """
+    chat_id = message.chat.id
+    message.user = User.find_by_conversation(session, chat_id)
+
+
+@bot.message_handler(commands = ["help"])
+def help(message):
+    """
+        Вывод сообщения помощи
+    """
+    user = message.user
+    bot.send_message(message.chat.id, "Ваша роль: {:}".format(RoleNames(user.role_id).name))
+    bot.send_message(message.chat.id, "Привет, вам доступны комманды:")
+    bot.send_message(message.chat.id, "/help - вызов данного сообщения")
 
 #Обработка входа в систему.
 @bot.message_handler(commands = ["start"])
