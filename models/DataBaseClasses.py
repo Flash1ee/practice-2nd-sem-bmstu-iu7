@@ -10,7 +10,6 @@ from sqlalchemy.sql import func
 import random
 import string
 
-#  = timezone(timedelta(hours=3))
 Base = declarative_base()
 
 

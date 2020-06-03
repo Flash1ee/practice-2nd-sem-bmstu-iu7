@@ -1,11 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import json
-import pymysql
-import sys
-import time
 from pprint import pprint
+import json
 
 
 from models.DataBaseClasses import *
@@ -18,7 +15,7 @@ engine = create_engine(config['database']['url'], echo=False)
 Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 session = Session()
-session.query(User).get(3).conversation = 999
+session.query(User).get(3).conversation = 981
 session.commit()
 
 # chat_id = 339306576
