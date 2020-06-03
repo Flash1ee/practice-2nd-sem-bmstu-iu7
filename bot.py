@@ -89,33 +89,14 @@ def get_ticket_body(message):
     if manager:
         Message.add(session, message.text, ticket.id, message.chat.id)
 
+        
+
+
 
 #просмотр активных тикетов
 @bot.message_handler(commands = ["ticket_list"])
 def active_ticket_list(message):
     user = User.find_by_conversation(session, conversation = message.chat.id)
-    if not user:
-        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /start или /superuser_init.")
-    else:
-        ans = ''
-        tickets = session.query(Ticket).filter(User.conversation == message.chat.id).all()
-        for x in user.get_active_tickets(session):
-            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
-            if x.manager_id == None:
-                ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
-            else:
-                ans += str(x.manager_id) + '\n'
-            ans += "Start data: " + str(tickets[0].start_date) + '\n\n'
-        bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
-
-
-
-#просмотр активных тикетов
-@bot.message_handler(commands = ["ticket_list"])
-def active_ticket_list(message):
-    user = User()
-    user = user.find_by_conversation(session, conversation = message.chat.id)
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
