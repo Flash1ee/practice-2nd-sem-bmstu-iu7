@@ -257,7 +257,7 @@ def ticket_close(message):
     ticket.close(session)
 
 
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create'))
 def create_manager(message):
     args = message.text.split()
     user = message.user

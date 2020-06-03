@@ -3,16 +3,11 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from pprint import pprint
 import json
-
-
 from models.DataBaseClasses import *
 
-# pymysql.install_as_MySQLdb()
-# pool_recycle=3600
-# , connect_args={'connect_timeout': 600000}, pool_timeout=6000000, pool_size=0
 config = json.load(open("./config.json"))
 isdebug = config['debug']
-engine = create_engine(config['database']['url'], echo=isdebug, pool_recycle=1)
+engine = create_engine(config['database']['url'], echo=isdebug)
 Session = sessionmaker(bind=engine)
 # Base.metadata.create_all(engine)
 session = Session()
@@ -20,21 +15,33 @@ session = Session()
 
 
 
+# session.add_all([
+#     # Ticket(manager_id=2, client_id=1, title='Первый тестовый'),
+#     # Ticket(manager_id=5, client_id=1, title='Второй тестовый')
+#     Message(ticket_id=6, sender_id=1, body="Писулькаю в 6-й тикет")
+# ]
+# )
 
-session.query(User).get(3).conversation = 981
-session.commit()
+user = User.find_by_id(session, 1)
 
-# chat_id = 339306576
-# username = 'Дмитрий'
-# import telebot
-# import json
-# from db import session 
-# from telebot import apihelper
-# from telebot import types
-# from models.DataBaseClasses import *
+ticket_id = user.identify_ticket(session)
 
-# token = config['bot']['token']
-# bot = telebot.TeleBot(token)
+print(ticket_id)
+
+# session.commit()
+
+
+# # chat_id = 339306576
+# # username = 'Дмитрий'
+# # import telebot
+# # import json
+# # from db import session 
+# # from telebot import apihelper
+# # from telebot import types
+# # from models.DataBaseClasses import *
+
+# # token = config['bot']['token']
+# # bot = telebot.TeleBot(token)
 
 # def start():
 #     cur_role = None
