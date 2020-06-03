@@ -105,7 +105,7 @@ def active_ticket_list(message):
             if x.manager_id == None:
                 ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
             else:
-                ans += x.manager_id + '\n'
+                ans += str(x.manager_id) + '\n'
             ans += "Start data: " + str(tickets[0].start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
 
