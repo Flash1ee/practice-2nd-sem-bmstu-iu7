@@ -288,11 +288,14 @@ class Ticket(Base):
     def get_all_messages(self, session):
         return session.query(Message).filter(Message.ticket_id == self.id).all()
 
-    # UNTESTED
-    def reappoint(self, session, reason):
+    def put_refuse_data(self, session, reason):
         new_blocked = BlockedTicket(
             ticket_id=self.id, manager_id=self.manager_id, reason=reason)
+        session.add(new_blocked)
+        session.commit()
 
+    # UNTESTED
+    def reappoint(self, session):
         refusal_list = [bt.manager_id for bt in session.query(BlockedTicket).filter(
             BlockedTicket.ticket_id == self.id).all()]
 
@@ -304,7 +307,6 @@ class Ticket(Base):
             rc = 1    # подаем сигнал админу, что от этого тикета уже все отказались
 
         self.manager_id = new_manager.id
-        session.add(new_blocked)
         session.commit()
         return rc
 
