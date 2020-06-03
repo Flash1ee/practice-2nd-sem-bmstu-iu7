@@ -4,7 +4,7 @@ from models.DataBaseClasses import *
 import telebot
 from telebot import types
 
-cfg = json.load(open("config.json"))
+cfg = json.load(open("./config.json"))
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
