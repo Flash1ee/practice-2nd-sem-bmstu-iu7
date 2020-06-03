@@ -29,6 +29,7 @@ def help(message):
     bot.send_message(message.chat.id, "Ваша роль: {:}".format(RoleNames(user.role_id).name))
     commands = "Привет! Вам доступны следующие комманды:\n\n"
     commands += "/help - Вызов данного сообщения.\n\n"
+    commands += "/start - вход в систему\n\n"
     if RoleNames(user.role_id).name == "CLIENT":
         commands += "/ticket_add - Создать новый тикет, с помощью которого Вы сможете описать задать Ваш вопрос менеджерам приложения.\n\n"\
             "/ticket_id - Выбрать тикет для переписки. Внимание: После вызова этой команды следующим сообщением необходимо указать"\
@@ -37,7 +38,9 @@ def help(message):
             "/ticket_close - Закрыть тикет в случае, когда Ваша проблема решена.\n\n"\
             "Что такое тикет?\n Тикет - это идентификационный номер Вашего вопроса, с помощью которого приложение будет с ним работать."
     if RoleNames(user.role_id).name == "MANAGER":
-        commands += "/manager_init <TOKEN> - Регистрация в системе.\n\n"\
+        commands += "/superuser init <TOKEN> - регистрация в системе по идентификационному номеру(токену). Чтобы получить "\
+            "токен, обратитесь к администратору приложения.\n\n"\
+            "/manager_init <TOKEN> - Регистрация в системе.\n\n"\
             "/message <ticket_id> - Ответить на выбранный тикет.\n\n"\
             "/ticket_id - Просмотреть историю переписки и информацию о выбранном тикете.  "\
             "Внимание: После вызова этой команды необходимо указать номер нужного тикета.\n\n"\
@@ -46,7 +49,9 @@ def help(message):
             "<ticket_id> - id тикета, от которого Вы отказываетесь, <reason> - соответственно причина отказа.\n\n"\
             "Справка: будьте внимательны при соблюдении шаблона команды. В противном случае команда недействительна."
     if RoleNames(user.role_id).name == "ADMIN":
-        commands += "/manager_list - Просмотр списка менеджеров.\n\n"\
+        commands += "/superuser init <TOKEN> - регистрация в системе по идентификационному номеру(токену). Чтобы получить "\
+            "токен, обратитесь к администратору приложения.\n\n"\
+            "/manager_list - Просмотр списка менеджеров.\n\n"\
             "/manager_create - Создать токен для подключения к менеджера системе.\n\n"\
             "/manager remove <manager_id> - Удаление менеджера. Данная операция происходит с подтверждением, при удалении "\
             "менеджера все его открытые тикеты передаются другим менеджерам.\n\n"\
@@ -129,22 +134,15 @@ def get_title(message):
     bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
     title = message.text
     conversation = message.chat.id
-    Ticket.create(session, title, conversation)
-    bot.register_next_step_handler(message, get_ticket_body)
-# TODO: Переделать функцию. Ticket.create уже назначил тикет на менеджера.
-# TODO: (В случае, если все менеджеры отказались, тикет был назначен на самого свободного и метод вернул 1)
-# def get_ticket_body(message):
-#     bot.send_message(message.chat.id, "Ваш запрос обрабатывается...")
-#     user = User.find_by_conversation(session, message.chat.id)
-#     ticket = user.get_active_tickets(session)[0]
-#     #теперь нужно назначить менеджера
-#     manager = User.get_free_manager(session, [])
-#     if manager:
-#         Message.add(session, message.text, ticket.id, message.chat.id)
-#         bot.send_message(message.chat.id, "Ваш вопрос отправлен менеджеру, спасибо.")
-#     else:
-#         bot.send_message(message.chat.id, "Извините, свободных менеджеров нет, повторите попытку позже.")
-
+    if Ticket.create(session, title, conversation) == 1:
+        bot.send_message(message.chat.id, user.name + ", извините, в системе нет ни одного менеджера. Пожалуйста, обратитесь спустя пару минут.")
+    else:
+        bot.register_next_step_handler(message, get_ticket_body)
+def get_ticket_body(message):
+    user = User.find_by_conversation(session, message.chat.id)
+    ticket = user.get_active_tickets(session)[-1]
+    Message.add(session, message.text, ticket.id, message.chat.id)
+    bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
         
 
 
