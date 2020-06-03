@@ -11,10 +11,15 @@ from models.DataBaseClasses import *
 # pool_recycle=3600
 # , connect_args={'connect_timeout': 600000}, pool_timeout=6000000, pool_size=0
 config = json.load(open("./config.json"))
-engine = create_engine(config['database']['url'], echo=False)
+engine = create_engine(config['database']['url'], echo=True, pool_recycle=1)
 Session = sessionmaker(bind=engine)
-Base.metadata.create_all(engine)
+# Base.metadata.create_all(engine)
 session = Session()
+
+
+
+
+
 session.query(User).get(3).conversation = 981
 session.commit()
 
