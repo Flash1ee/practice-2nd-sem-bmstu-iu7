@@ -2,6 +2,7 @@ import json
 from db import session 
 from models.DataBaseClasses import *
 import telebot
+from telebot import types
 
 cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
@@ -84,9 +85,10 @@ def get_ticket_body(message):
     user = User.find_by_conversation(session, message.chat.id)
     ticket = user.get_active_tickets(session)[0]
     #теперь нужно назначить менеджера
-    manager = User.get_free_manager(session)
+    manager = User.get_free_manager(session, [])
     if manager:
         Message.add(session, message.text, ticket.id, message.chat.id)
+<<<<<<< HEAD
 
 
 #просмотр активных тикетов
@@ -107,14 +109,20 @@ def active_ticket_list(message):
                 ans += str(x.manager_id) + '\n'
             ans += "Start data: " + str(tickets[0].start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
+=======
+        bot.send_message(message.chat.id, "Ваш вопрос отправлен менеджеру, спасибо.")
+    else:
+        bot.send_message(message.chat.id, "Извините, свободных менеджеров нет, повторите попытку позже.")
+
+        
+>>>>>>> 0475ba0e82f31efcb35166e087b14617e7e17469
 
 
 
 #просмотр активных тикетов
 @bot.message_handler(commands = ["ticket_list"])
 def active_ticket_list(message):
-    user = User()
-    user = user.find_by_conversation(session, message.chat.id)
+    user = User.find_by_conversation(session, message.chat.id)
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -191,11 +199,11 @@ def switch_for_superuser(message):
     if message.text == "/ticket_list":
         active_ticket_list(message)
     else:
-        #ticket = Ticket.get_by_id(session, message.text).first()
+        ticket = Ticket.get_by_id(session, message.text)
         if Ticket.get_by_id(session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некорректный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
-            ans = "Информация для ticket_id " + ticket_id + ":\n\n"
+            ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
             ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
             if ticket.manager_id == None:
                 ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
@@ -204,13 +212,14 @@ def switch_for_superuser(message):
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             ans += "Start data: " + str(ticket.start_date) + '\n\n'
             ans += "История переписки:\n\n"
-            all_messages = ticket.get_all_messages
+            all_messages = ticket.get_all_messages(session)
             for x in all_messages:
                 ans += str(x.date) + "\n"
                 role = User.find_by_id(session, x.sender_id)
                 ans += RoleNames(role).name + ": " + x.body + "\n\n"
             bot.send_message(message.chat.id, ans)
 
+<<<<<<< HEAD
 '''#cоздание кастомной клавиатуры
 def create_su_init_keyboard(buttons):
     keyboard = types.InlineKeyboardMarkup(row_width = 3)
@@ -269,6 +278,8 @@ def callback_handler(callback_query):
             
 '''
 
+=======
+>>>>>>> 0475ba0e82f31efcb35166e087b14617e7e17469
 
 
 
@@ -340,7 +351,7 @@ def get_manager_list(message):
         managers = User.get_all_users_with_role(session, RoleNames.MANAGER.value)
         if not managers:
             bot.send_message(message.chat.id,"Менеджеры не найдены, для добавления воспользуйтесь командой" \
-            "/manager create")
+            " /manager create")
         else:
             for i in enumerate(managers):
                 bot.send_message(message.chat.id, "№{} Имя - {}, id - {}".format(i[0] + 1,i[1].name, i[1].conversation))
@@ -353,24 +364,8 @@ def check_role(message):
     else:
         bot.send_message(message.chat.id, "Ваша текущая роль - {}".format(RoleNames(user.role_id).name)) 
 
-'''
+
 #TODO TOMMOROW
-@bot.message_handler(content_types = ['text'])
-def confirm(args):
-    print(args) 
-    keyboard = types.InlineKeyboardMarkup()
-    key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
-    keyboard.add(key_yes)
-    key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
-    keyboard.add(key_no)
-    bot.send_message(args[0].chat.id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
-    @bot.callback_query_handler(func = lambda call: True)
-    def caller_worker(call):
-        if call.data == "yes":
-            args[1].demote_manager(session)
-            bot.send_message(args[0].chat.id, "Менеджер с id {} удалён".format(args[2]))
-        elif call.data == "no":
-            bot.send_message(args[0].chat.id, "Отменяем операцию удаления")
 #удаление менеджера
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager remove')
 def manager_remove(message):
@@ -383,19 +378,44 @@ def manager_remove(message):
     elif user.role_id != RoleNames.ADMIN.value:
         bot.send_message(message.chat.id,"Извините, эта команда доступна только для администраторов приложения.")
     else:
+        global manager_id
         manager_id = args[2]
         manager = User.find_by_conversation(session, manager_id)
         if not manager:
-            bot.send_message(message.chat.it, "Менеджеров с таким id не найдено в базе данных.")
+            bot.send_message(message.chat.id, "Менеджеров с таким id не найдено в базе данных.")
         else:
-            bot.register_next_step_handler([message, manager, manager_id], confirm)
-'''
+            keyboard = types.InlineKeyboardMarkup()
+            key_yes = types.InlineKeyboardButton(text = "Да", callback_data = 'yes')
+            keyboard.add(key_yes)
+            key_no = types.InlineKeyboardButton(text = "Нет", callback_data = 'no')
+            keyboard.add(key_no)
+            bot.send_message(message.chat.id, "Вы действительно хотите сделать это?", reply_markup=keyboard)
+            @bot.callback_query_handler(func = lambda call: True)
+            def caller_worker(call):
+                global manager_id
+                manager = User.find_by_conversation(session, manager_id) 
+                if call.data == "yes":
+                    manager.demote_manager(session)
+                    bot.send_message(message.chat.id, "Менеджер с id {} удалён".format(manager_id))
+                elif call.data == "no":
+                    bot.send_message(message.chat.id, "Отменяем операцию удаления")
 
 #TODO команды менеджера:
 #отказ менеджера от тикета
-@bot.message_handler(commands = ["ticket_refuse"])
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket refuse')
 def ticket_refuse(message):
-    pass
+    args = message.text.split()
+    if len(args) != 3:
+        bot.send_message(message.chat.id, "Неверное использование команды. Шаблон: /ticket refuse <ticket id>")
+    elif User.find_by_conversation(session, message.chat.id).role_id != RoleNames.MANAGER.value:
+        bot.send_message(message.chat.id, "Извините, ваша роль не позволяет воспользоваться командой, \
+            нужно быть manager/nВаша роль {}".format(RoleNames(User.find_by_conversation(session, message.chat.id).role_id)).name)
+    elif not Ticket.get_by_id(session, args[2]):
+        bot.send_message(message.chat.id, "Извините, номер данного тикета не найден в базе")
+
+    else:
+        user = User.find_by_conversation(session, message.chat.id)
+
 
 #ответ менеджера на тикет
 @bot.message_handler(commands = ["message"])
