@@ -289,6 +289,10 @@ class Ticket(Base):
         return session.query(Message).filter(Message.ticket_id == self.id).all()
 
     def put_refuse_data(self, session, reason):
+        '''
+        Метод создает новый объект класса BlockedTicket, в котором содержится информация
+        об отказе от текущего тикета
+        '''
         new_blocked = BlockedTicket(
             ticket_id=self.id, manager_id=self.manager_id, reason=reason)
         session.add(new_blocked)
@@ -296,6 +300,13 @@ class Ticket(Base):
 
     # UNTESTED
     def reappoint(self, session):
+        '''
+        Метод получает список менеджеров, уже отказавшихся от данного тикета,
+        получает наиболее свободного менеджера, который еще не отказывался от тикета,
+        с помощью метода User.get_free_manager и переназначает тикет на него. Если все
+        зарегистрированные менеджеры отказались от тикета, метод принудительно назначает 
+        его на самого незагруженного менеджера и возвращает 1. В иных случаях возвращается 0.
+        '''
         refusal_list = [bt.manager_id for bt in session.query(BlockedTicket).filter(
             BlockedTicket.ticket_id == self.id).all()]
 
@@ -317,6 +328,12 @@ class Ticket(Base):
     # TODO: UNTESTED
     @staticmethod
     def create(session, title, conversation):
+        '''
+        Метод создает новый объект класса Ticket с заголовком title, находит client_id
+        по переданному параметру conversation, находит manager_id как наиболее свободного менеджера 
+        (метод User.get_free_manager) и созданный объект помещает в базу данных.
+        Возвращает 0, если процесс выполнен успешно, и 1, если в базе данных нет менеджера.
+        '''
         new_ticket = Ticket(title=title)
 
         client = session.query(User).filter(User.conversation == conversation)[0]
