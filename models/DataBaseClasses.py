@@ -146,7 +146,7 @@ class User(Base):
         '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value 
         (В случае, если нет ни одного User, вернет пустой list)
         '''
-        return session.query(User).filter(User.role_id == role_id).all()
+        return session.query(User).filter_by(role_id = role_id).all()
 
     @staticmethod
     def find_by_id(session, id: int) -> 'User or None':
