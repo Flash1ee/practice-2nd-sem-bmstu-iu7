@@ -192,7 +192,7 @@ def chose_ticket(message):
         bot.send_message(message.chat.id, "Введите номер тикета, на который Вы хотите переключиться. Чтобы посмотреть список "\
                          "активных тикетов, Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
         bot.register_next_step_handler(message, switch_for_client)
-    else
+    else:
         bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите просмотреть. Для просмотра активных "\
                          "тикетов Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
         bot.register_next_step_handler(message, switch_for_superuser)
@@ -254,7 +254,6 @@ def ticket_close(message):
                 "обратитесь к менеджеру.")
     else:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
-    bot.send_message(message.chat.id, 
     ticket.close(session)
 
 
@@ -387,22 +386,37 @@ def manager_remove(message):
 # отказ менеджера от тикета
 
 
+def describe(message):
+    if not message.text:
+        bot.send_message(chat, "Описание отказа от тикета обязательно.\n \
+            Опишите причину закрытия тикета\n")
+        bot.register_next_step_handler(message, describe)
+    else:
+        global tick_id
+        ticket = Ticket.get_by_id(session,tick_id)
+        ticket.put_refuse_data(session, message.text)
+        ticket.reappoint(session)
+        bot.send_message(message.chat.id, f"Вы отказались от тикета {tick_id}\n"
+        "Для проверки воспользуйтесь командой /ticket_list")
+
 @bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket refuse')
 def ticket_refuse(message):
     args = message.text.split()
+    user = message.user
+    chat = message.chat.id
     if len(args) != 3:
         bot.send_message(
-            message.chat.id, "Неверное использование команды. Шаблон: /ticket refuse <ticket id>")
-    elif User.find_by_conversation(session, message.chat.id).role_id != RoleNames.MANAGER.value:
-        bot.send_message(message.chat.id, f"Извините, ваша роль не позволяет воспользоваться командой, \
-            нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(session, message.chat.id).role_id).name}")
+            chat, "Неверное использование команды. Шаблон: /ticket refuse <ticket id>")
+    elif user.role_id != RoleNames.MANAGER.value:
+        bot.send_message(chat, f"Извините, ваша роль не позволяет воспользоваться командой, \
+            нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(session, chat).role_id).name}")
     elif not Ticket.get_by_id(session, args[2]):
-        bot.send_message(
-            message.chat.id, "Извините, номер данного тикета не найден в базе")
-
+        bot.send_message(chat, "Извините, номер данного тикета не найден в базе")
     else:
-        user = User.find_by_conversation(session, message.chat.id)
-
+        global tick_id
+        tick_id = args[2]
+        bot.send_message(chat, "Опишите причину закрытия тикета\n")
+        bot.register_next_step_handler(message, describe)
 
 # ответ менеджера на тикет
 @bot.message_handler(commands=["message"])
