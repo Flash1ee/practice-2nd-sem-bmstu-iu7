@@ -1,11 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import json
-import pymysql
-import sys
-import time
 from pprint import pprint
+import json
 
 
 from models.DataBaseClasses import *
@@ -14,11 +11,17 @@ from models.DataBaseClasses import *
 # pool_recycle=3600
 # , connect_args={'connect_timeout': 600000}, pool_timeout=6000000, pool_size=0
 config = json.load(open("./config.json"))
-engine = create_engine(config['database']['url'], echo=False)
+isdebug = config['debug']
+engine = create_engine(config['database']['url'], echo=isdebug, pool_recycle=1)
 Session = sessionmaker(bind=engine)
-Base.metadata.create_all(engine)
+# Base.metadata.create_all(engine)
 session = Session()
-session.query(User).get(3).conversation = 999
+
+
+
+
+
+session.query(User).get(3).conversation = 981
 session.commit()
 
 # chat_id = 339306576
