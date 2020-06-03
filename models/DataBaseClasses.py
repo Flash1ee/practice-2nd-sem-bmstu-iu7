@@ -100,13 +100,14 @@ class User(Base):
         self.role_id = role_id
         session.commit()
         
-    # TODO fix Ticket.reappoint(reason!!!)
     def demote_manager(self, session) -> None:
-        '''Autocommit = ON'''
+        '''Разжаловать менеджера до статуса клиента.
+        Все тикеты бывшего менеджера автоматически будут распределены между остальными
+        '''
         his_tickets = self.get_active_tickets(session)
 
         for ticket in his_tickets:
-            ticket.reappoint(session, "Менеджер удален")
+            ticket.reappoint(session)
 
         self.role_id = RoleNames.CLIENT.value
         session.commit()
