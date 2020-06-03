@@ -17,6 +17,8 @@ engine = create_engine(config['database']['url_new'], echo=False, connect_args={
 Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 session = Session()
+session.query(User).get(3).conversation = 999
+session.commit()
 
 # chat_id = 339306576
 # username = 'Дмитрий'
