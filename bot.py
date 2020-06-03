@@ -163,36 +163,36 @@ def active_ticket_list(message):
     elif user.role_id == 3:
         # для клиента - вывод активных тикетов(или всех?TODO)
         ans = ''
-        for x in user.get_active_tickets(session):
-            ans += 'Ticket id: ' + str(x.id) + '\n'
-            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
-            if x.manager_id == None:
+        for ticket in user.get_active_tickets(session):
+            ans += 'Ticket id: ' + str(ticket.id) + '\n'
+            ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
+            if ticket.manager_id == None:
                 ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
             else:
-                ans += "Manager_id: " + str(x.manager_id) + '\n'
-            ans += "Start data: " + str(x.start_date) + '\n\n'
+                ans += "Manager_id: " + str(ticket.manager_id) + '\n'
+            ans += "Start data: " + str(ticket.start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     elif user.role_id == 2:
         # для менеджера - активные прикрепленные тикеты + client_id
         ans = ''
-        for x in user.get_active_tickets(session):
-            ans += 'Ticket id: ' + str(x.id) + '\n'
-            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
-            ans += "Client_id: " + str(x.client_id) + '\n'
-            ans += "Start data: " + str(x.start_date) + '\n\n'
+        for ticket in user.get_active_tickets(session):
+            ans += 'Ticket id: ' + str(ticket.id) + '\n'
+            ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
+            ans += "Client_id: " + str(ticket.client_id) + '\n'
+            ans += "Start date: " + str(ticket.start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     else:
         # для администратора - активные тикеты всех менеджеров(видимо)
         ans = ''
-        for x in user.get_active_tickets(session):
-            ans += 'Ticket id: ' + str(x.id) + '\n'
-            ans += 'Title: ' + x.title + '\n' + 'Manager_id: '
-            if x.manager_id == None:
+        for ticket in user.get_active_tickets(session):
+            ans += 'Ticket id: ' + str(ticket.id) + '\n'
+            ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
+            if ticket.manager_id == None:
                 ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
             else:
-                ans += str(x.manager_id) + '\n'
-            ans += "Client_id: " + str(x.client_id) + '\n'
-            ans += "Start data: " + str(x.start_date) + '\n\n'
+                ans += str(ticket.manager_id) + '\n'
+            ans += "Client_id: " + str(ticket.client_id) + '\n'
+            ans += "Start data: " + str(ticket.start_date) + '\n\n'
         bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
 
 
@@ -251,10 +251,10 @@ def switch_for_superuser(message):
             ans += "Start data: " + str(ticket.start_date) + '\n\n'
             ans += "История переписки:\n\n"
             all_messages = ticket.get_all_messages(session)
-            for x in all_messages:
-                ans += str(x.date) + "\n"
-                role = User.find_by_id(session, x.sender_id)
-                ans += RoleNames(role).name + ": " + x.body + "\n\n"
+            for msg in all_messages:
+                ans += str(msg.date) + "\n"
+                role = User.find_by_id(session, msg.sender_id)
+                ans += RoleNames(role).name + ": " + msg.body + "\n\n"
             bot.send_message(message.chat.id, ans)
 
 
