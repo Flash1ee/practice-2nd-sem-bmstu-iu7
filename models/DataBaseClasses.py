@@ -158,8 +158,8 @@ class User(Base):
         return session.query(User).filter(User.name == name).all()
 
     @staticmethod
-    def find_by_conversation(session, conversation: int) -> 'User or None':
-        return session.query(User).filter(User.conversation == conversation).first()
+    def find_by_conversation(session, user_conversation: int) -> 'User or None':
+        return session.query(User).filter_by(conversation = user_conversation).first()
 
     @staticmethod
     def change_name(session, new_name, user_conversation) -> None:
