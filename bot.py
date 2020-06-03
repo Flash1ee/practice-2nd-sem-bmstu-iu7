@@ -26,7 +26,7 @@ def help(message):
         Вывод сообщения помощи
     """
     user = message.user
-    bot.send_message(message.chat.id, "Ваша роль: {:}".format(RoleNames(user.role_id).name))
+    bot.send_message(message.chat.id, f"Ваша роль: {RoleNames(user.role_id).name}")
     bot.send_message(message.chat.id, "Привет, вам доступны комманды:")
     bot.send_message(message.chat.id, "/help - вызов данного сообщения")
 
@@ -36,11 +36,12 @@ def start(message):
     username = message.chat.first_name
     chat_id = message.chat.id
     cur_role = None
-    #если еще нет администраторов - назначаем администратором
-    if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
-        cur_role = RoleNames.ADMIN.value
-    elif not User.find_by_conversation(session, chat_id):
+    if not message.user:
         cur_role = RoleNames.CLIENT.value
+        #если еще нет администраторов - назначаем администратором
+        if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
+            cur_role = RoleNames.ADMIN.value
+
     #если назначена новая роль
     if cur_role:
         #добавляем сведения в бд
@@ -48,7 +49,7 @@ def start(message):
         bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
     else:
         #пользователь уже зарегистрирован
-        user = User.find_by_conversation(session, chat_id)
+        user = message.user
         cur_role = user.role_id
         if user.name.lower() != username.lower():
             user.change_name(session, username, chat_id)
