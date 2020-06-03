@@ -69,7 +69,7 @@ def create_ticket(message):
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start.")
     else:
-        if user.role_id != 3:
+        if user.role_id != RoleNames.CLIENT.value:
             bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
         else:    
             bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
@@ -80,17 +80,19 @@ def get_title(message):
     conversation = message.chat.id
     Ticket.create(session, title, conversation)
     bot.register_next_step_handler(message, get_ticket_body)
-def get_ticket_body(message):
-    bot.send_message(message.chat.id, "Ваш запрос обрабатывается...")
-    user = User.find_by_conversation(session, message.chat.id)
-    ticket = user.get_active_tickets(session)[0]
-    #теперь нужно назначить менеджера
-    manager = User.get_free_manager(session, [])
-    if manager:
-        Message.add(session, message.text, ticket.id, message.chat.id)
-        bot.send_message(message.chat.id, "Ваш вопрос отправлен менеджеру, спасибо.")
-    else:
-        bot.send_message(message.chat.id, "Извините, свободных менеджеров нет, повторите попытку позже.")
+# TODO: Переделать функцию. Ticket.create уже назначил тикет на менеджера.
+# TODO: (В случае, если все менеджеры отказались, тикет был назначен на самого свободного и метод вернул 1)
+# def get_ticket_body(message):
+#     bot.send_message(message.chat.id, "Ваш запрос обрабатывается...")
+#     user = User.find_by_conversation(session, message.chat.id)
+#     ticket = user.get_active_tickets(session)[0]
+#     #теперь нужно назначить менеджера
+#     manager = User.get_free_manager(session, [])
+#     if manager:
+#         Message.add(session, message.text, ticket.id, message.chat.id)
+#         bot.send_message(message.chat.id, "Ваш вопрос отправлен менеджеру, спасибо.")
+#     else:
+#         bot.send_message(message.chat.id, "Извините, свободных менеджеров нет, повторите попытку позже.")
 
         
 

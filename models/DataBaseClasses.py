@@ -100,13 +100,14 @@ class User(Base):
         self.role_id = role_id
         session.commit()
         
-    # TODO fix Ticket.reappoint(reason!!!)
     def demote_manager(self, session) -> None:
-        '''Autocommit = ON'''
+        '''Разжаловать менеджера до статуса клиента.
+        Все тикеты бывшего менеджера автоматически будут распределены между остальными
+        '''
         his_tickets = self.get_active_tickets(session)
 
         for ticket in his_tickets:
-            ticket.reappoint(session, "Менеджер удален")
+            ticket.reappoint(session)
 
         self.role_id = RoleNames.CLIENT.value
         session.commit()
@@ -170,10 +171,10 @@ class User(Base):
         User.find_by_conversation(session, user_conversation).name = new_name
         session.commit()
 
-    # TODO: Бета версия. Обсуждаема доработка/переработка метода.
     @ staticmethod
-    def get_free_manager(session, refusal_list) -> 'User or None':
-        '''Возвращает самого свободного менеджера, отсутствующего в refusal_list
+    def _get_free_manager(session, refusal_list) -> 'User or None':
+        '''Не должна использоваться никем, кроме как отвечающими за БД
+        Возвращает самого свободного менеджера, отсутствующего в refusal_list
         В случае, если все менеджеры есть в refusal_list, возвращает None'''
         all_managers = dict.fromkeys(User.get_all_users_with_role(
             session, RoleNames.MANAGER.value), None)
@@ -311,10 +312,10 @@ class Ticket(Base):
             BlockedTicket.ticket_id == self.id).all()]
 
         rc = 0
-        new_manager = User.get_free_manager(session, refusal_list)
+        new_manager = User._get_free_manager(session, refusal_list)
 
         if new_manager is None:
-            new_manager = User.get_free_manager(session, [])
+            new_manager = User._get_free_manager(session, [])
             rc = 1    # подаем сигнал админу, что от этого тикета уже все отказались
 
         self.manager_id = new_manager.id
@@ -339,7 +340,7 @@ class Ticket(Base):
         client = session.query(User).filter(User.conversation == conversation)[0]
         new_ticket.client_id = client.id
             
-        manager = User.get_free_manager(session, [])
+        manager = User._get_free_manager(session, [])
         # если менеджеров нет вообще
         if manager is None:
             return 1
