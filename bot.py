@@ -34,7 +34,8 @@ CommonController.init(bot)
 ClientController.init(bot)
 
 # вход в систему менеджера/админа
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
+@bot.message_handler(commands=["superuser_init"])
+#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
     args = message.text.split()
     user = message.user
@@ -67,7 +68,7 @@ def active_ticket_list(message):
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif user.role_id == 3:
         ans = ''
-        for ticket in user.get_active_tickets(session):
+        for ticket in user.get_active_tickets(message.session):
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
             if ticket.manager_id == None:
@@ -79,15 +80,15 @@ def active_ticket_list(message):
     else:
         ans = ''
         #нужно отсортировать, но у меня такое подозрение, что они уже отсортированные
-        for ticket in user.get_active_tickets(session):
+        for ticket in user.get_active_tickets(message.session):
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n'
             ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
-            messages = Message.get(session, ticket.id, ticket.client_id)
+            messages = Message.get(message.session, ticket.id, ticket.client_id)
             ans += "Wait time: " + (str(datetime.now() - messages[0].date))[:8] + "\n"
-            client = User.find_by_id(session, ticket.client_id)
-            if client.identify_ticket(session) == ticket.id:
+            client = User.find_by_id(message.session, ticket.client_id)
+            if client.identify_ticket(message.session) == ticket.id:
                 ans += "Status: Клиент ожидает ответа на этот тикет!\n"
             else:
                 ans += "Status: Работа по тикету приостановлена.\n"
@@ -138,13 +139,13 @@ def switch_for_superuser(message):
             else:
                 ans += str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
-            ans += "Start data: " + str(ticket.start_date) + '\n\n'
+            ans += "Start date: " + str(ticket.start_date) + '\n\n'
             ans += "История переписки:\n\n"
             messages = ticket.get_all_messages(message.session)
-            for message in messages:
-                ans += str(message.date) + "\n"
-                role = User.find_by_id(message.session, message.sender_id).role_id
-                ans += RoleNames(role).name + ": " + message.body + "\n\n"
+            for msg in messages:
+                ans += str(msg.date) + "\n"
+                role = User.find_by_id(message.session, msg.sender_id).role_id
+                ans += RoleNames(role).name + ": " + msg.body + "\n\n"
             bot.send_message(chat_id, ans)
 
 
@@ -175,7 +176,8 @@ def ticket_close(message):
     ticket.close(message.session)
 
 
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
+@bot.message_handler(commands=["manager_create"])
+#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
     args = message.text.split()
     user = message.user
@@ -194,8 +196,8 @@ def create_manager(message):
             bot.send_message(
                 message.chat.id, f"{new_token.value}\nТокен создан - срок действия 24 часа")
 
-
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
+@bot.message_handler(commands=["admin_create"])
+#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
 def create_admin(message):
     args = message.text.split()
     user = message.user
@@ -212,12 +214,11 @@ def create_admin(message):
                 message.chat.id, f"Извиите. У вас недостаточно прав, вы - {RoleNames(user.role_id).name}")
         else:
             new_token = Token.generate(message.session, RoleNames.ADMIN.value)
-            print("GGG")
             bot.send_message(
                 message.chat.id, f"{new_token.value}\nТокен создан - срок действия 24 часа")
 
-
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
+@bot.message_handler(commands=["manager_list"])
+#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
 def get_manager_list(message):
     args = message.text.split()
     user = message.user
@@ -255,7 +256,8 @@ def check_role(message):
 
 # TODO TOMMOROW
 # удаление менеджера
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager remove')
+@bot.message_handler(commands=["manager_remove"])
+#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager remove')
 def manager_remove(message):
     args = message.text.split()
     user = message.user
@@ -316,8 +318,8 @@ def describe(message):
         ticket.reappoint(message.session)
         bot.send_message(message.chat.id, f"Вы отказались от тикета {tick_id}\n"
         "Для проверки воспользуйтесь командой /ticket_list")
-
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket refuse')
+@bot.message_handler(commands=["ticket_refuse"])
+#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket refuse')
 def ticket_refuse(message):
     args = message.text.split()
     user = message.user
@@ -341,7 +343,7 @@ def ticket_refuse(message):
 @bot.message_handler(commands=["message"])
 def manager_answer(message):
     keyboard = types.InlineKeyboardMarkup()
-    key_history = types.InlineKeyboardButton(text="Просмотреть историю сообщений клиента", callback_data="История")
+    key_history = types.InlineKeyboardButton(text="Просмотреть историю сообщений тикета", callback_data="История")
     keyboard.add(key_history)
     key_reply = types.InlineKeyboardButton(text="Выбрать тикет для ответа", callback_data='Ответ')
     keyboard.add(key_reply)
@@ -353,15 +355,25 @@ def manager_answer(message):
         if callback.data == "Просмотр":
             active_ticket_list(message)
         if callback.data == "История":
-            bot.send_message(message.chat.id, "Введите client_id:")
+            bot.send_message(message.chat.id, "Введите ticket_id:")
             bot.register_next_step_handler(message, chose_id)
         if callback.data == "Ответ":
-            bot.send_message(message.chat.id, "Введите client_id:")
+            bot.send_message(message.chat.id, "Введите ticket_id:")
             bot.register_next_step_handler(message, get_reply_id)
-'''def chose_id(message):
-    client_id = message.text
+
+def chose_id(message):
+    ticket_id = message.text
     chat_id = message.chat.id
-    messages = session.query(Message).filter(Message.sender_id==client_id)
+    msg = message.session.query(Message).filter(Message.ticket_id == ticket_id).first()
+    if not client_id:
+        bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено\n")
+    else:
+        data = msg.body
+        for strk in data:
+            
+    #messages = session.query(Message).filter(Message.sender_id==client_id)
+    messages = Message.get(message.session, client_id)[len(messages)-1]
+    print(messages)+"\n\n\n"
     messages = messages[:20]
     ans = ''
     for message in messages:
@@ -383,7 +395,7 @@ def get_reply(message):
     Message.add(session, reply, ticket.id, message.chat.id)
     message = Message.get(session, ticket_id, message.chat.id)
     bot.send_message(client.id, message)
-    bot.send_message(chat_id, "Ответ отправлен.")'''
+    bot.send_message(chat_id, "Ответ отправлен.")
 
 # Команды адмиинистратора:
 
