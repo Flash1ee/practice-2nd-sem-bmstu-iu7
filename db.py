@@ -2,15 +2,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from pprint import pprint
+from sqlalchemy.pool import NullPool
 import json
 from models.DataBaseClasses import *
 
 config = json.load(open("./config.json"))
 isdebug = config['debug']
-engine = create_engine(config['database']['url'], echo=isdebug)
+engine = create_engine(config['database']['url'], echo=isdebug, poolclass=NullPool)
 Session = sessionmaker(bind=engine)
-# Base.metadata.create_all(engine)
-session = Session()
 
 
 
@@ -22,11 +21,11 @@ session = Session()
 # ]
 # )
 
-user = User.find_by_id(session, 1)
+# user = User.find_by_id(session, 1)
 
-ticket_id = user.identify_ticket(session)
+# ticket_id = user.identify_ticket(session)
 
-print(ticket_id)
+# print(ticket_id)
 
 # session.commit()
 
