@@ -11,6 +11,18 @@ isdebug = config['debug']
 engine = create_engine(config['database']['url'], echo=isdebug, poolclass=NullPool)
 Session = sessionmaker(bind=engine)
 
+# User.find_by_id(session, 1).name='Васёк'
+# session.commit()
+
+
+# session.connection()
+# User.get_all_users_with_role(session, 2)
+# User.find_by_id(session, 3).name='Васёк'
+# session.commit()
+# session.close()
+
+# Base.metadata.create_all(engine)
+
 
 
 
@@ -19,9 +31,11 @@ Session = sessionmaker(bind=engine)
 #     # Ticket(manager_id=5, client_id=1, title='Второй тестовый')
 #     Message(ticket_id=6, sender_id=1, body="Писулькаю в 6-й тикет")
 # ]
-# )
+# # )
 
 # user = User.find_by_id(session, 1)
+# User.find_by_id(session, 1).name='Васёк'
+# session.commit()
 
 # ticket_id = user.identify_ticket(session)
 
