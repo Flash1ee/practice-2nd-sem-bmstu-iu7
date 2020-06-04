@@ -10,6 +10,21 @@ config = json.load(open("./config.json"))
 isdebug = config['debug']
 engine = create_engine(config['database']['url'], echo=isdebug, poolclass=NullPool)
 Session = sessionmaker(bind=engine)
+Base.metadata.create_all(engine)
+session = Session()
+
+
+t = Ticket.get_closed_tickets_by_time(session, 2, 7)
+
+print(t)
+# token = Token.find(session, 'b6LpxrXn1PkN')
+
+# if token:
+#     print(f'Date: {token.expires_date}')
+# else:
+#     print("NULL")
+# print(Token.generate(session, RoleNames.MANAGER.value).expires_date)
+# Role.init_roles(session)
 
 # User.find_by_id(session, 1).name='Васёк'
 # session.commit()
@@ -21,7 +36,6 @@ Session = sessionmaker(bind=engine)
 # session.commit()
 # session.close()
 
-# Base.metadata.create_all(engine)
 
 
 
