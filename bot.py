@@ -9,7 +9,7 @@ import CommonController
 import ClientController
 
 cfg = json.load(open("config.json"))
-token = cfg['bot']['token']
+token = cfg['bot']['token_demo']
 bot = telebot.TeleBot(token)
 
 apihelper.ENABLE_MIDDLEWARE = True
@@ -67,7 +67,7 @@ def active_ticket_list(message):
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif user.role_id == 3:
         ans = ''
-        for ticket in user.get_active_tickets(session):
+        for ticket in user.get_active_tickets(message.session):
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
             if ticket.manager_id == None:
@@ -79,15 +79,15 @@ def active_ticket_list(message):
     else:
         ans = ''
         #нужно отсортировать, но у меня такое подозрение, что они уже отсортированные
-        for ticket in user.get_active_tickets(session):
+        for ticket in user.get_active_tickets(message.session):
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n'
             ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
-            messages = Message.get(session, ticket.id, ticket.client_id)
+            messages = Message.get(message.session, ticket.id, ticket.client_id)
             ans += "Wait time: " + (str(datetime.now() - messages[0].date))[:8] + "\n"
-            client = User.find_by_id(session, ticket.client_id)
-            if client.identify_ticket(session) == ticket.id:
+            client = User.find_by_id(message.session, ticket.client_id)
+            if client.identify_ticket(message.session) == ticket.id:
                 ans += "Status: Клиент ожидает ответа на этот тикет!\n"
             else:
                 ans += "Status: Работа по тикету приостановлена.\n"
@@ -127,7 +127,7 @@ def switch_for_superuser(message):
     if message.text == "/ticket_list":
         active_ticket_list(message)
     else:
-        ticket = Ticket.get_by_id(session, message.text)
+        ticket = Ticket.get_by_id(message.session, message.text)
         if Ticket.get_by_id(message.session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некорректный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
@@ -141,10 +141,10 @@ def switch_for_superuser(message):
             ans += "Start data: " + str(ticket.start_date) + '\n\n'
             ans += "История переписки:\n\n"
             messages = ticket.get_all_messages(message.session)
-            for message in messages:
-                ans += str(message.date) + "\n"
-                role = User.find_by_id(message.session, message.sender_id).role_id
-                ans += RoleNames(role).name + ": " + message.body + "\n\n"
+            for msg in messages:
+                ans += str(msg.date) + "\n"
+                role = User.find_by_id(message.session, msg.sender_id).role_id
+                ans += RoleNames(role).name + ": " + msg.body + "\n\n"
             bot.send_message(chat_id, ans)
 
 
