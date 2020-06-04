@@ -386,7 +386,11 @@ class Message(Base):
 
 
     @staticmethod
+<<<<<<< HEAD
     def get(session, ticket_id: int, user_id: int = None) -> list:
+=======
+    def get(session, ticket_id: int, user_id=None) -> list:
+>>>>>>> 8c6ab106c1c93dbbafe2711b7ebd12d6a735bc6d
         '''
         Получить список всеx сообщений user_id в данном ticket_id
         В случае, если user_id не передается, метод вернет сообщения 
