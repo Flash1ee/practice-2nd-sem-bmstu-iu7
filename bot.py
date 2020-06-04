@@ -9,7 +9,7 @@ import CommonController
 import ClientController
 
 cfg = json.load(open("config.json"))
-token = cfg['bot']['token_demo']
+token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
 apihelper.ENABLE_MIDDLEWARE = True
