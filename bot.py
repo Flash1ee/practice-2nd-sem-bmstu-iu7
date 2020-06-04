@@ -118,7 +118,7 @@ def switch_for_client(message):
     if message.text == "/ticket_list":
         active_ticket_list(message)
     else:
-        if Ticket.get_by_id(session, message.text) == None:
+        if Ticket.get_by_id(message.session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некоторектный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
             bot.send_message(message.chat.id, "Тикет успешно выбран. В ближайшем времени с Вами свяжется менеджер.")
@@ -128,7 +128,7 @@ def switch_for_superuser(message):
         active_ticket_list(message)
     else:
         ticket = Ticket.get_by_id(session, message.text)
-        if Ticket.get_by_id(session, message.text) == None:
+        if Ticket.get_by_id(message.session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некорректный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
             ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
@@ -140,10 +140,10 @@ def switch_for_superuser(message):
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             ans += "Start data: " + str(ticket.start_date) + '\n\n'
             ans += "История переписки:\n\n"
-            messages = ticket.get_all_messages(session)
+            messages = ticket.get_all_messages(message.session)
             for message in messages:
                 ans += str(message.date) + "\n"
-                role = User.find_by_id(session, message.sender_id).role_id
+                role = User.find_by_id(message.session, message.sender_id).role_id
                 ans += RoleNames(role).name + ": " + message.body + "\n\n"
             bot.send_message(chat_id, ans)
 
