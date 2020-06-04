@@ -128,7 +128,7 @@ def switch_for_superuser(message):
     if message.text == "/ticket_list":
         active_ticket_list(message)
     else:
-        ticket = Ticket.get_by_id(session, message.text)
+        ticket = Ticket.get_by_id(message.session, message.text)
         if Ticket.get_by_id(message.session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некорректный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
