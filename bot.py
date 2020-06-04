@@ -238,7 +238,7 @@ def close_ticket(message):
     if not user:
         bot.send_message(message.chat.id, "Для того, чтобы закрыть тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
-    elif user.role_id == 2:
+    elif user.role_id == RoleNames.MANAGER.value:
         bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой "\
                          "/help, чтобы просмотреть список возможных команд.")
     else:
@@ -249,7 +249,7 @@ def ticket_close(message):
     ticket = Ticket.get_by_id(message.text)
     if not ticket:
         bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Попробуйте еще раз.")
-    if User.find_by_id(ticket.sender_id).role_id == 1:
+    if User.find_by_id(ticket.sender_id).role_id == RoleNames.ADMIN.value:
         bot.send_message(message.chat.id, f"Тикет {message.text} был закрыт по решению администратора. Для уточнения информации "\
                 "обратитесь к менеджеру.")
     else:
@@ -257,7 +257,7 @@ def ticket_close(message):
     ticket.close(session)
 
 
-@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create'))
+@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
     args = message.text.split()
     user = message.user
