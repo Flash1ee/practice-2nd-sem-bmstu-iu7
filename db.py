@@ -11,12 +11,8 @@ isdebug = config['debug']
 engine = create_engine(config['database']['url'], echo=isdebug, poolclass=NullPool)
 Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
-session = Session()
+# session = Session()
 
-
-t = Ticket.get_closed_tickets_by_time(session, 2, 7)
-
-print(t)
 # token = Token.find(session, 'b6LpxrXn1PkN')
 
 # if token:
