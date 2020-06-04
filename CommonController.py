@@ -52,15 +52,15 @@ def init(bot):
         cur_role = None
         if not message.user:
             cur_role = RoleNames.CLIENT.value
-            if not User.get_all_users_with_role(session, RoleNames.ADMIN.value):
+            if not User.get_all_users_with_role(message.session, RoleNames.ADMIN.value):
                 cur_role = RoleNames.ADMIN.value
         if cur_role:
-            User.add_several(session, [(chat_id, username, cur_role)])
+            User.add_several(message.session, [(chat_id, username, cur_role)])
             bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
         else:
             user = message.user
             cur_role = user.role_id
             if user.name.lower() != username.lower():
-                user.change_name(session, username, chat_id)
+                user.change_name(message.session, username, chat_id)
             bot.send_message(chat_id, f'{username}, Вы уже зарегистрировались в системе.\nВаш статус - {RoleNames(user.role_id).name}')
 
