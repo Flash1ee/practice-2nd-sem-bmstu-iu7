@@ -35,19 +35,18 @@ ClientController.init(bot)
 
 # вход в систему менеджера/админа
 @bot.message_handler(commands=["superuser_init"])
-#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/superuser init')
 def create_superuser(message):
     args = message.text.split()
     user = message.user
     if not user:
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
-    elif len(args) != 3:
+    elif len(args) != 2:
         bot.send_message(
-            message.chat.id, "Неправильное использование команды superuser.\nШаблон:/superuser init TOKEN")
-    elif not Token.find(message.session, args[2]):
+            message.chat.id, "Неправильное использование команды superuser.\nШаблон:/superuser_init TOKEN")
+    elif not Token.find(message.session, args[1]):
         bot.send_message(message.chat.id, "Данный токен не существует. Попробуйте еще раз.")
     else:
-        token_new = args[2]
+        token_new = args[1]
         my_token = Token.find(message.session, token_new)
         if my_token:
             user.appoint(message.session, my_token.role_id)
@@ -177,16 +176,15 @@ def ticket_close(message):
 
 
 @bot.message_handler(commands=["manager_create"])
-#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager create')
 def create_manager(message):
     args = message.text.split()
     user = message.user
     if not user:
         bot.send_message(
             message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
-    elif (len(args)) != 2:
+    elif (len(args)) != 1:
         bot.send_message(
-            message.chat.id, "Много аргументов: команда должна быть /manager create")
+            message.chat.id, "Много аргументов: команда должна быть /manager_create")
     else:
         if user.role_id != RoleNames.ADMIN.value:
             bot.send_message(
@@ -197,7 +195,6 @@ def create_manager(message):
                 message.chat.id, f"{new_token.value}\nТокен создан - срок действия 24 часа")
 
 @bot.message_handler(commands=["admin_create"])
-#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/admin create')
 def create_admin(message):
     args = message.text.split()
     user = message.user
@@ -205,9 +202,9 @@ def create_admin(message):
     if not user:
         bot.send_message(
             message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
-    elif (len(args)) != 2:
+    elif (len(args)) != 1:
         bot.send_message(
-            message.chat.id, "Много аргументов: команда должна выглядеть так /admin create")
+            message.chat.id, "Много аргументов: команда должна выглядеть так /admin_create")
     else:
         if user.role_id != RoleNames.ADMIN.value:
             bot.send_message(
@@ -218,16 +215,12 @@ def create_admin(message):
                 message.chat.id, f"{new_token.value}\nТокен создан - срок действия 24 часа")
 
 @bot.message_handler(commands=["manager_list"])
-#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager list')
 def get_manager_list(message):
     args = message.text.split()
     user = message.user
     if not user:
         bot.send_message(
             message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
-    elif len(args) != 2:
-        bot.send_message(
-            message.chat.id, "Неверное использование команды. Шаблон: /manager list")
     elif user.role_id != RoleNames.ADMIN.value:
         bot.send_message(
             message.chat.id, "Извините, эта команда доступна только для администраторов приложения.")
@@ -254,28 +247,27 @@ def check_role(message):
             message.chat.id, f"Ваша текущая роль - {RoleNames(user.role_id).name}")
 
 
-# TODO TOMMOROW
 # удаление менеджера
 @bot.message_handler(commands=["manager_remove"])
-#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/manager remove')
 def manager_remove(message):
     args = message.text.split()
     user = message.user
     if not user:
         bot.send_message(
             message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
-    elif len(args) != 3:
+    elif len(args) != 2:
         bot.send_message(
-            message.chat.id, "Неверное использование команды. Шаблон: /manager remove <manager id>")
+            message.chat.id, "Неверное использование команды. Шаблон: /manager_remove <manager id>")
     elif user.role_id != RoleNames.ADMIN.value:
         bot.send_message(
             message.chat.id, "Извините, эта команда доступна только для администраторов приложения.")
     else:
         """
             Что тут происходит?
+            Красота
         """
         global manager_id
-        manager_id = args[2]
+        manager_id = args[1]
         manager = User.find_by_conversation(message.session, manager_id)
         if not manager:
             bot.send_message(
@@ -302,7 +294,6 @@ def manager_remove(message):
                     bot.send_message(
                         message.chat.id, "Отменяем операцию удаления")
 
-# TODO команды менеджера:
 # отказ менеджера от тикета
 
 
@@ -319,24 +310,44 @@ def describe(message):
         bot.send_message(message.chat.id, f"Вы отказались от тикета {tick_id}\n"
         "Для проверки воспользуйтесь командой /ticket_list")
 @bot.message_handler(commands=["ticket_refuse"])
-#@bot.message_handler(func=lambda message: " ".join(message.text.split()[0:2]) == '/ticket refuse')
 def ticket_refuse(message):
     args = message.text.split()
     user = message.user
     chat = message.chat.id
-    if len(args) != 3:
+    if len(args) != 2:
         bot.send_message(
-            chat, "Неверное использование команды. Шаблон: /ticket refuse <ticket id>")
+            chat, "Неверное использование команды. Шаблон: /ticket_refuse <ticket id>")
     elif user.role_id != RoleNames.MANAGER.value:
         bot.send_message(chat, f"Извините, ваша роль не позволяет воспользоваться командой, \
             нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(message.session, chat).role_id).name}")
-    elif not Ticket.get_by_id(message.session, args[2]):
+    elif not Ticket.get_by_id(message.session, args[1]):
         bot.send_message(chat, "Извините, номер данного тикета не найден в базе")
     else:
         global tick_id
-        tick_id = args[2]
+        tick_id = args[1]
         bot.send_message(chat, "Опишите причину закрытия тикета\n")
         bot.register_next_step_handler(message, describe)
+
+
+ #Обработка входа в систему.
+    @bot.message_handler(commands = ["start"])
+    def start(message):
+        username = message.chat.first_name
+        chat_id = message.chat.id
+        cur_role = None
+        if not message.user:
+            cur_role = RoleNames.CLIENT.value
+            if not User.get_all_users_with_role(message.session, RoleNames.ADMIN.value):
+                cur_role = RoleNames.ADMIN.value
+        if cur_role:
+            User.add_several(message.session, [(chat_id, username, cur_role)])
+            bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
+        else:
+            user = message.user
+            cur_role = user.role_id
+            if user.name.lower() != username.lower():
+                user.change_name(message.session, username, chat_id)
+            bot.send_message(chat_id, f'{username}, Вы уже зарегистрировались в системе.\nВаш статус - {RoleNames(user.role_id).name}')
 
 
 # ответ менеджера на тикет
@@ -364,38 +375,44 @@ def manager_answer(message):
 def chose_id(message):
     ticket_id = message.text
     chat_id = message.chat.id
-    msg = message.session.query(Message).filter(Message.ticket_id == ticket_id).first()
-    if not client_id:
+    msg = Message.get(message.session, ticket_id)
+    if not msg:
         bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено\n")
     else:
-        data = msg.body
-        for strk in data:
-            
-    #messages = session.query(Message).filter(Message.sender_id==client_id)
-    messages = Message.get(message.session, client_id)[len(messages)-1]
-    print(messages)+"\n\n\n"
-    messages = messages[:20]
-    ans = ''
-    for message in messages:
-        ans += "Date: " + str(message.date) + "\n"
-        ans += "Message: " + message.body + "\n\n"
-    if ans == '':
-        bot.send_message(chat_id, "История сообщений пустая.")
-    else:
-        bot.send_message(chat_id, "История последних сообщений клиента:\n\n" + ans)
+        msg = msg[:20]
+        ans = ''
+        for m in msg:
+            if User.find_by_id(message.session, m.sender_id).role_id == RoleNames.CLIENT.value:
+                ans += "CLIENT:\n"
+            else:
+                ans += "MANAGER:\n"
+            ans += "Date: " + str(m.date) + "\n"
+            ans += "Message: " + m.body + "\n\n"
+        if not ans:
+            bot.send_message(chat_id, "История сообщений пустая.")
+        else:
+            bot.send_message(chat_id, "История последних сообщений клиента:\n\n" + ans)
+    
+
 def get_reply_id(message):
-    Message.add(session, message.text, None, message.chat.id)
-    bot.register_next_step_handler(message, get_reply)
+    ticket_id = message.text
+    if not Message.get(message.session,ticket_id):
+        bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
+    else:
+        bot.send_message(message.chat.id, f"Введите текст ответа на тикет {ticket_id}")
+        @bot.middleware_handler(update_types=['message'])
+        def save_ticket_id(bot_instance, message):
+            message.ticket_id = ticket_id
+        bot.register_next_step_handler(message, get_reply)
+        
 def get_reply(message):
-    chat_id = message.chat.id
-    client_id = session.query(Message).filter(Message.sender_id==message.chat.id).body
-    client = User.find_by_id(session, client_id)
-    ticket = client.identify_ticket(session)
+    client_id = message.session.query(Message).filter(Message.ticket_id == message.ticket_id).first()
+    client = User.find_by_id(message.session, client_id.sender_id).conversation
+    print("\n\n\n")
     reply = message.text
-    Message.add(session, reply, ticket.id, message.chat.id)
-    message = Message.get(session, ticket_id, message.chat.id)
-    bot.send_message(client.id, message)
-    bot.send_message(chat_id, "Ответ отправлен.")
+    Message.add(message.session, reply, message.ticket_id, message.chat.id)
+    bot.send_message(client, reply)
+    bot.send_message(message.chat.id, "Ответ отправлен.")
 
 # Команды адмиинистратора:
 
