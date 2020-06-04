@@ -15,13 +15,14 @@ def init(bot):
                 bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
                 bot.register_next_step_handler(message, get_title)
     def get_title(message):
+        user = message.user
         bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
         if Ticket.create(message.session, message.text, message.chat.id) == 1:
             bot.send_message(message.chat.id, user.name + ", извините, в системе нет ни одного менеджера. Пожалуйста, обратитесь спустя пару минут.")
         else:
             bot.register_next_step_handler(message, get_ticket_body)
     def get_ticket_body(message):
-        user = User.find_by_conversation(message.session, message.chat.id)
+        user = message.user
         Message.add(message.session, message.text, user.get_active_tickets(message.session)[-1].id, message.chat.id)
         bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
 
