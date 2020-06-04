@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Text
-from sqlalchemy import ForeignKey, desc
+from sqlalchemy import Column, Integer, String, DateTime, BigInteger
+from sqlalchemy import ForeignKey, desc, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import except_
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from pprint import pprint
@@ -226,7 +225,7 @@ class Ticket(Base):
     manager_id = Column(Integer, ForeignKey('users.id'))
     client_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String(50))
-    start_date = Column(DateTime, default=datetime.now())
+    start_date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
     close_date = Column(DateTime, default=None)
 
     # Relationship
@@ -366,7 +365,7 @@ class BlockedTicket(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     manager_id = Column(Integer, ForeignKey('users.id'))
     reason = Column(String(50))
-    date = Column(DateTime, default=datetime.now())
+    date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
 
     # Relationship
     ticket = relationship('Ticket', back_populates='isblocked')
@@ -379,7 +378,7 @@ class Message(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     sender_id = Column(Integer, ForeignKey('users.id'))
     body = Column(Text)
-    date = Column(DateTime, default=datetime.now())
+    date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
 
     # Relationship
     ticket = relationship('Ticket', back_populates='messages')
@@ -399,15 +398,11 @@ class Message(Base):
 
         session.add(Message(ticket_id=ticket_id, sender_id=sender_id, body=body))
         session.commit()
-    
-
 
 class Token(Base):
     __tablename__ = 'tokens'
-
     value = Column(String(12), primary_key=True, autoincrement=False)
-    expires_date = Column(
-        DateTime, default=datetime.now() + timedelta(days=1))
+    date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
     role_id = Column(Integer, ForeignKey('roles.id'))
 
     # Relationship
@@ -440,9 +435,8 @@ class Token(Base):
     def find(session, token_value: str) -> 'Token or None':
         '''Внимание: перед попыткой обратиться к полям полученного объекта,
         необходимо обязательно сделать проверку на None'''
-
         token = session.query(Token).get(token_value)
-        if token and token.expires_date > datetime.now():
+        if token and token.date + timedelta(days=1) > datetime.now():
             return token
         return None
 
@@ -451,7 +445,7 @@ class Token(Base):
     def garbage_collector(session) -> None:
         '''Удаляет все токены из БД, срок которых истек'''
         tokens = session.query(Token).filter(
-            Token.expires_date < datetime.now()).all()
+            func.ADDDATE(Token.date, 1) < datetime.now()).all()
         for token in tokens:
             session.delete(token)
         session.commit()
