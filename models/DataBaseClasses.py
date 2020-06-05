@@ -32,7 +32,7 @@ class Role(Base):
         'Token', order_by='Token.role_id', back_populates='role')
 
     @staticmethod
-    def init_roles(session):
+    def init(session) -> None:
         '''
         Проводится только один раз - сразу после создания таблицы '__roles__'.
         Автокоммит - да.
@@ -97,7 +97,7 @@ class User(Base):
         '''
         self.role_id = role_id
         session.commit()
-        
+
     def demote_manager(self, session) -> None:
         '''Разжаловать менеджера до статуса клиента.
         Все тикеты бывшего менеджера автоматически будут распределены между остальными
@@ -127,10 +127,10 @@ class User(Base):
         return tickets
 
     def identify_ticket(self, session) -> int:
-        last_message = session.query(Message).filter_by(sender_id = self.id).order_by(desc(Message.date)).first()
+        last_message = session.query(Message).filter_by(
+            sender_id=self.id).order_by(desc(Message.date)).first()
         last_ticket_id = last_message.ticket_id
         return last_ticket_id
-
 
     # Static methods
 
@@ -143,7 +143,8 @@ class User(Base):
         Autocommit = ON
         '''
         for user in users:
-            session.add(User(conversation=user[0], name=user[1], role_id=user[2]))
+            session.add(
+                User(conversation=user[0], name=user[1], role_id=user[2]))
         session.commit()
 
     @staticmethod
@@ -151,7 +152,7 @@ class User(Base):
         '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value 
         (В случае, если нет ни одного User, вернет пустой list)
         '''
-        return session.query(User).filter_by(role_id = role_id).all()
+        return session.query(User).filter_by(role_id=role_id).all()
 
     @staticmethod
     def find_by_id(session, id: int) -> 'User or None':
@@ -164,7 +165,7 @@ class User(Base):
 
     @staticmethod
     def find_by_conversation(session, user_conversation: int) -> 'User or None':
-        return session.query(User).filter_by(conversation = user_conversation).first()
+        return session.query(User).filter_by(conversation=user_conversation).first()
 
     @staticmethod
     def change_name(session, new_name, user_conversation) -> None:
@@ -204,7 +205,7 @@ class User(Base):
 
             coef = k1 ** q1 + k2 ** q2 + k3 ** q3
 
-            if k4 > 1: 
+            if k4 > 1:
                 coef /= k4
 
             all_managers[manager] = coef
@@ -225,7 +226,8 @@ class Ticket(Base):
     manager_id = Column(Integer, ForeignKey('users.id'))
     client_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String(50))
-    start_date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
+    start_date = Column(DateTime, nullable=False,
+                        server_default=func.current_timestamp())
     close_date = Column(DateTime, default=None)
 
     # Relationship
@@ -341,9 +343,10 @@ class Ticket(Base):
         '''
         new_ticket = Ticket(title=title)
 
-        client = session.query(User).filter(User.conversation == conversation)[0]
+        client = session.query(User).filter(
+            User.conversation == conversation)[0]
         new_ticket.client_id = client.id
-            
+
         manager = User._get_free_manager(session, [])
         # если менеджеров нет вообще
         if manager is None:
@@ -365,7 +368,8 @@ class BlockedTicket(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     manager_id = Column(Integer, ForeignKey('users.id'))
     reason = Column(String(50))
-    date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
+    date = Column(DateTime, nullable=False,
+                  server_default=func.current_timestamp())
 
     # Relationship
     ticket = relationship('Ticket', back_populates='isblocked')
@@ -378,12 +382,12 @@ class Message(Base):
     ticket_id = Column(Integer, ForeignKey('tickets.id'))
     sender_id = Column(Integer, ForeignKey('users.id'))
     body = Column(Text)
-    date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
+    date = Column(DateTime, nullable=False,
+                  server_default=func.current_timestamp())
 
     # Relationship
     ticket = relationship('Ticket', back_populates='messages')
     sender = relationship('User', back_populates='messages')
-
 
     @staticmethod
     def get(session, ticket_id: int, user_id: int = None) -> list:
@@ -392,13 +396,13 @@ class Message(Base):
         В случае, если user_id не передается, метод вернет сообщения 
         обоих пользователей.
         '''
-        messages = session.query(Message).filter(Message.ticket_id == ticket_id)
+        messages = session.query(Message).filter(
+            Message.ticket_id == ticket_id)
 
         if user_id:
             messages = messages.filter(Message.sender_id == user_id)
 
         return messages.all()
-
 
     @staticmethod
     def add(session, body: str, ticket_id: int, sender_conversation: int) -> None:
@@ -406,13 +410,16 @@ class Message(Base):
 
         sender_id = User.find_by_conversation(session, sender_conversation).id
 
-        session.add(Message(ticket_id=ticket_id, sender_id=sender_id, body=body))
+        session.add(Message(ticket_id=ticket_id,
+                            sender_id=sender_id, body=body))
         session.commit()
+
 
 class Token(Base):
     __tablename__ = 'tokens'
     value = Column(String(12), primary_key=True, autoincrement=False)
-    date = Column(DateTime, nullable=False, server_default=func.current_timestamp())
+    date = Column(DateTime, nullable=False,
+                  server_default=func.current_timestamp())
     role_id = Column(Integer, ForeignKey('roles.id'))
 
     # Relationship
@@ -449,7 +456,6 @@ class Token(Base):
         if token and token.date + timedelta(days=1) > datetime.now():
             return token
         return None
-
 
     @staticmethod
     def garbage_collector(session) -> None:
