@@ -1,9 +1,12 @@
 {
-    "debug": true,
+    "debug": false,
     "bot": {
-        "token": ""
+        "token": "",
+        "token_demo": ""
     },
     "database": {
-        "url": ""
+        "url": "mysql+pymysql://?charset=utf8mb4&binary_prefix=true",
+        "url_demo": "mysql+pymysql://?charset=utf8mb4&binary_prefix=true",
+        "create": false
     }
 }

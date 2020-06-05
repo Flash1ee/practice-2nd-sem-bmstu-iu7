@@ -9,4 +9,10 @@ config = load(open("./config.json"))
 engine = create_engine(config['database']['url'], echo=config['debug'], poolclass=NullPool)
 Session = sessionmaker(bind=engine)
 
-# Base.metadata.create_all(engine)
+
+if config['database']['create']:
+    Base.metadata.create_all(engine)
+    Roles.init(session)
+
+
+# session = Session()

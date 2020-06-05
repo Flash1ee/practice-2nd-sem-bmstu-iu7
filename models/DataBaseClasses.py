@@ -2,9 +2,8 @@ from sqlalchemy import Column, Integer, String, DateTime, BigInteger
 from sqlalchemy import ForeignKey, desc, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from enum import Enum
-from pprint import pprint
 from sqlalchemy.sql import func
 import random
 import string
@@ -65,11 +64,6 @@ class User(Base):
     messages = relationship(
         'Message', order_by='Message.sender_id', back_populates='sender')
 
-    # Default methods
-
-    def __repr__(self):
-        return f'id: {self.id}; Name: {self.name}; Role: {self.role_id}\n'
-
     # Instance methods
 
     def get_active_tickets(self, session) -> list:
@@ -110,11 +104,6 @@ class User(Base):
         self.role_id = RoleNames.CLIENT.value
         session.commit()
 
-    def add(self, session) -> None:
-        '''Autocommit = ON'''
-        session.add(self)
-        session.commit()
-
     def get_all_tickets(self, session) -> list:
         if self.role_id == RoleNames.ADMIN.value:
             tickets = session.query(Ticket).all()
@@ -135,16 +124,13 @@ class User(Base):
     # Static methods
 
     @staticmethod
-    def add_several(session, users: list) -> None:
+    def add(session, conversation: int, name: str, role_id: int) -> None:
         '''
-        param session: current session,
-        param user: [ (conversation, name, role_id), ... ]
         role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
         Autocommit = ON
         '''
-        for user in users:
-            session.add(
-                User(conversation=user[0], name=user[1], role_id=user[2]))
+        session.add(User(conversation=conversation,
+                         name=name, role_id=role_id))
         session.commit()
 
     @staticmethod
@@ -241,10 +227,8 @@ class Ticket(Base):
     messages = relationship(
         'Message', order_by='Message.ticket_id', back_populates='ticket')
 
-    def __repr__(self):
-        return f'Title: {self.title}, manager_id={self.manager_id}'
-
     # TODO UNTESTED
+
     @staticmethod
     def get_closed_tickets_by_time(session, manager_id, days: int) -> list:
         curr_date = datetime.now()
