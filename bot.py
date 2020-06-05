@@ -396,13 +396,15 @@ def manager_answer(message):
 
 def chose_id(message):
     ticket_id = message.text
+    ticket = Ticket.get_by_id(message.session, ticket_id)
     chat_id = message.chat.id
-    msg = Message.get(message.session, ticket_id)
+    msg = message.session.query(Message).filter(Message.sender_id == ticket.client_id).order_by(desc(Message.date))
     if not msg:
         bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено\n")
     else:
-        msg = msg[:20]
         ans = ''
+        if msg.count() > 10:
+            msg = msg.get(10)
         for m in msg:
             ans += RoleNames(User.find_by_id(message.session, m.sender_id).role_id).name + '\n'
             ans += "Date: " + str(m.date) + "\n"
