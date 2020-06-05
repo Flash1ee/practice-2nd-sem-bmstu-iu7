@@ -15,6 +15,7 @@ def init(bot):
                 bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
                 bot.register_next_step_handler(message, get_title)
     def get_title(message):
+        print(message,"\n\n")
         user = message.user
         bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
         if Ticket.create(message.session, message.text, message.chat.id) == 1:
