@@ -129,7 +129,8 @@ class User(Base):
         role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
         Autocommit = ON
         '''
-        session.add(User(session, conversation=conversation, name=name, role_id=role_id))
+        session.add(User(conversation=conversation,
+                         name=name, role_id=role_id))
         session.commit()
 
     @staticmethod
@@ -226,8 +227,8 @@ class Ticket(Base):
     messages = relationship(
         'Message', order_by='Message.ticket_id', back_populates='ticket')
 
-
     # TODO UNTESTED
+
     @staticmethod
     def get_closed_tickets_by_time(session, manager_id, days: int) -> list:
         curr_date = datetime.now()
