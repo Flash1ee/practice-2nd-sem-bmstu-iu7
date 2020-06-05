@@ -110,11 +110,6 @@ class User(Base):
         self.role_id = RoleNames.CLIENT.value
         session.commit()
 
-    def add(self, session) -> None:
-        '''Autocommit = ON'''
-        session.add(self)
-        session.commit()
-
     def get_all_tickets(self, session) -> list:
         if self.role_id == RoleNames.ADMIN.value:
             tickets = session.query(Ticket).all()
@@ -135,16 +130,12 @@ class User(Base):
     # Static methods
 
     @staticmethod
-    def add_several(session, users: list) -> None:
+    def add(session, conversation: int, name: str, role_id: int) -> None:
         '''
-        param session: current session,
-        param user: [ (conversation, name, role_id), ... ]
         role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
         Autocommit = ON
         '''
-        for user in users:
-            session.add(
-                User(conversation=user[0], name=user[1], role_id=user[2]))
+        session.add(User(session, conversation=conversation, name=name, role_id=role_id))
         session.commit()
 
     @staticmethod
