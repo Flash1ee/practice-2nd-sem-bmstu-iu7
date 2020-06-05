@@ -82,7 +82,7 @@ def active_ticket_list(message):
             ans = ''
             for ticket in user.get_active_tickets(message.session):
                 ans += 'Ticket id: ' + str(ticket.id) + '\n'
-                ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
+                ans += 'Title: ' + ticket.title + '\n'
                 if ticket.manager_id == None:
                     ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
                 else:
@@ -99,12 +99,30 @@ def active_ticket_list(message):
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             messages = Message.get(message.session, ticket.id, ticket.client_id)
             #получить последний ответ менеджера по тикету, если он есть
-            ans += "Wait time: " + (str(datetime.now() - messages[0].date))[:8] + "\n"
+            wait_time = "00:00:00"
+            last_msg = message.session.query(Message).filter(
+                Message.sender_id == ticket.manager_id).filter(Message.ticket_id == ticket.id).order_by(desc(Message.date)).first()
+            if last_msg:
+                #нужно получить следующее сообщение клиента на этот ответ
+                first_msg = message.session.query(Message).filter(
+                    Message.sender_id == ticket.client_id and Message.date > last_msg.date).order_by(Message.date).first()
+                if first_msg:
+                    wait_time = (str(datetime.now() - first_msg.date))
+            else:
+                #отсчитывать время с ticket_id/ticket_add
+                first_msg = message.session.query(Message).filter(
+                    Message.sender_id == ticket.client_id and Message.body == "/ticket_id").order_by(desc(Message.date)).first()
+                if not first_msg:
+                    first_msg = message.session.query(Message).filter(
+                        Message.sender_id == ticket.client_id and Message.body == "/ticket_add").order_by(desc(Message.date)).first()
+                wait_time = (str(datetime.now() - first_msg.date))
             client = User.find_by_id(message.session, ticket.client_id)
             if client.identify_ticket(message.session) == ticket.id:
                 ans += "Status: Клиент ожидает ответа на этот тикет!\n"
+                ans += "Wait time: " + wait_time.split(".")[0] + "\n"
             else:
                 ans += "Status: Работа по тикету приостановлена.\n"
+                ans += "Wait time: " + "-" + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
             bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
@@ -135,6 +153,7 @@ def switch_for_client(message):
         if Ticket.get_by_id(message.session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некоторектный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
+            Message.add(message.session, "/ticket_id", None, message.chat.id)
             bot.send_message(message.chat.id, "Тикет успешно выбран. В ближайшем времени с Вами свяжется менеджер.")
 def switch_for_superuser(message):
     chat_id = message.chat.id
@@ -166,11 +185,10 @@ def switch_for_superuser(message):
 #Закрытие тикета.
 @bot.message_handler(commands = ["ticket_close"])
 def close_ticket(message):
-    user = User.find_by_id(message.session, message.from_user.id)
-    if not user:
+    if not message.user:
         bot.send_message(message.chat.id, "Для того, чтобы закрыть тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
-    elif user.role_id == RoleNames.MANAGER.value:
+    elif message.user.role_id == RoleNames.MANAGER.value:
         bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой "\
                          "/help, чтобы просмотреть список возможных команд.")
     else:
