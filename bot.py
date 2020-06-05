@@ -98,6 +98,7 @@ def active_ticket_list(message):
             ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             messages = Message.get(message.session, ticket.id, ticket.client_id)
+            #получить последний ответ менеджера по тикету, если он есть
             ans += "Wait time: " + (str(datetime.now() - messages[0].date))[:8] + "\n"
             client = User.find_by_id(message.session, ticket.client_id)
             if client.identify_ticket(message.session) == ticket.id:
@@ -415,6 +416,11 @@ def get_reply(message):
 @bot.message_handler(commands=["cancel"])
 def cancel(message):
     pass
+
+@bot.message_handler(content_types=["text"])
+def get_updates(message):
+    ticket_id = message.user.identify_ticket(message.session)
+    Message.add(message.session, message.text, ticket_id, message.chat.id)
 
 @bot.middleware_handler(update_types=['message'])
 def session_middleware(bot_instance, message):
