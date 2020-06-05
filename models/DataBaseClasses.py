@@ -117,7 +117,7 @@ class User(Base):
 
     def identify_ticket(self, session) -> int:
         last_message = session.query(Message).filter_by(
-            sender_id=self.id).order_by(desc(Message.date)).first()
+            sender_id=self.id).filter(Message.ticket_id).order_by(desc(Message.date)).first()
         last_ticket_id = last_message.ticket_id
         return last_ticket_id
 

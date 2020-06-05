@@ -75,7 +75,8 @@ def active_ticket_list(message):
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
-    elif user.role_id == 3:
+    elif RoleNames(user.role_id).name == "CLIENT":
+        Message.add(message.session, "/ticket_list", None, message.chat.id)
         if not user.get_active_tickets(message.session):
             bot.send_message(message.chat.id, "У вас нет активных тикетов.")
         else:
@@ -192,6 +193,7 @@ def close_ticket(message):
         bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой "\
                          "/help, чтобы просмотреть список возможных команд.")
     else:
+        Message.add(message.session, "/ticket_close", None, message.chat.id)
         bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть. Для просмотра активных "\
                          "тикетов Вы можете воспользоваться командой /ticket_list.")
         bot.register_next_step_handler(message, ticket_close)
@@ -434,8 +436,13 @@ def cancel(message):
 
 @bot.message_handler(content_types=["text"])
 def get_updates(message):
-    ticket_id = message.user.identify_ticket(message.session)
-    Message.add(message.session, message.text, ticket_id, message.chat.id)
+    user = message.user
+    print(user.name)
+    ticket_id = user.identify_ticket(message.session)
+    if ticket_id:
+        Message.add(message.session, message.text, ticket_id, message.chat.id)
+    else:
+        bot.send_message(message.chat.id, "Чтобы задать вопрос, воспользуйтесь командой /ticket_add.")
 
 @bot.middleware_handler(update_types=['message'])
 def session_middleware(bot_instance, message):
