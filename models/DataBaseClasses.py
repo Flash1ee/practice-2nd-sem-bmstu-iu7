@@ -32,7 +32,7 @@ class Role(Base):
         'Token', order_by='Token.role_id', back_populates='role')
 
     @staticmethod
-    def init_roles(session):
+    def init(session) -> None:
         '''
         Проводится только один раз - сразу после создания таблицы '__roles__'.
         Автокоммит - да.
