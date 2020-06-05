@@ -262,12 +262,11 @@ class Ticket(Base):
         #print(message.ticket.id, message.ticket.client_id, message.ticket.manager_id, message.ticket.title, message.ticket.start_date)
         # print(message.ticket.manager_id)
 
-        res = session.query(Message.ticket_id, func.max(
-            Message.date)).filter(Message.ticket_id is not None).group_by(Message.ticket_id).all()
+        res = session.query(Message.ticket_id, func.max(Message.date)).filter(Message.ticket_id != None).group_by(Message.ticket_id).all()
         ticks = []
         for a in res:
-            msg = session.query(Message).filter(Message.ticket_id is not None).filter(
-                Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
+            msg = session.query(Message).filter(Message.ticket_id != None).filter(Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
+            print(type(msg))
             if msg.sender_id != manager_id and msg.ticket.manager_id == manager_id:
                 ticks.append(msg.ticket_id)
 
