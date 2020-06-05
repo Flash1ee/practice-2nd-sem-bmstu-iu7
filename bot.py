@@ -32,6 +32,13 @@ def auth_middleware(bot_instance, message):
     chat_id = message.chat.id
     message.user = User.find_by_conversation(message.session, chat_id)
 
+@bot.middleware_handler(update_types=['message'])
+def session_middleware(bot_instance, message):
+    """
+        Фиксим отсутствие поля text
+    """
+    if not message.text:
+        message.text = ''
 
 CommonController.init(bot)
 ClientController.init(bot)
