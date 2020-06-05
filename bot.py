@@ -331,31 +331,11 @@ def ticket_refuse(message):
         bot.register_next_step_handler(message, describe)
 
 
- #Обработка входа в систему.
-    @bot.message_handler(commands = ["start"])
-    def start(message):
-        username = message.chat.first_name
-        chat_id = message.chat.id
-        cur_role = None
-        if not message.user:
-            cur_role = RoleNames.CLIENT.value
-            if not User.get_all_users_with_role(message.session, RoleNames.ADMIN.value):
-                cur_role = RoleNames.ADMIN.value
-        if cur_role:
-            User.add(message.session, chat_id, username, cur_role)
-            bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
-        else:
-            user = message.user
-            cur_role = user.role_id
-            if user.name.lower() != username.lower():
-                user.change_name(message.session, username, chat_id)
-            bot.send_message(chat_id, f'{username}, Вы уже зарегистрировались в системе.\nВаш статус - {RoleNames(user.role_id).name}')
-
 
 # ответ менеджера на тикет
 @bot.message_handler(commands=["message"])
 def manager_answer(message):
-    if message.user.role_id != RoleNames.MANAGER.name:
+    if message.user.role_id != RoleNames.MANAGER.value:
         bot.send_message(message.chat.id, "Извините, данная команда недоступна клиенту.")
     else:
         keyboard = types.InlineKeyboardMarkup()
