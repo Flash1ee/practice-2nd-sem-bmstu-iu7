@@ -263,13 +263,13 @@ class Ticket(Base):
         # print(message.ticket.manager_id)
 
         res = session.query(Message.ticket_id, func.max(
-            Message.date)).group_by(Message.ticket_id).all()
+            Message.date)).filter(Message.ticket_id is not None).group_by(Message.ticket_id).all()
         ticks = []
         for a in res:
-            message = session.query(Message).filter(
+            msg = session.query(Message).filter(Message.ticket_id is not None).filter(
                 Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
-            if message.sender_id != manager_id and message.ticket.manager_id == manager_id:
-                ticks.append(message.ticket_id)
+            if msg.sender_id != manager_id and msg.ticket.manager_id == manager_id:
+                ticks.append(msg.ticket_id)
 
         # all_open_tickets = joined.filter(Ticket.close_date.is_(None)).filter(
         #    Ticket.manager_id == manager_id)
