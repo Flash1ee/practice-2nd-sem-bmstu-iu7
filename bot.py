@@ -116,7 +116,7 @@ def active_ticket_list(message):
                 if not first_msg:
                     first_msg = message.session.query(Message).filter(
                         Message.sender_id == ticket.client_id).filter(Message.body == "/ticket_add").order_by(desc(Message.date)).first()
-                wait_time = (str(datetime.now() - first_msg.date))
+                    wait_time = (str(datetime.now() - first_msg.date))
             client = User.find_by_id(message.session, ticket.client_id)
             if client.identify_ticket(message.session) == ticket.id:
                 ans += "Status: Клиент ожидает ответа на этот тикет!\n"
@@ -376,6 +376,8 @@ def manager_answer(message):
         keyboard.add(key_reply)
         key_show = types.InlineKeyboardButton(text="Просмотреть активные тикеты", callback_data='Просмотр')
         keyboard.add(key_show)
+        key_refuse = types.InlineKeyboardButton(text="Отказаться от тикета", callback_data='Отказ')
+        keyboard.add(key_refuse)
         bot.send_message(message.chat.id, "Что Вы хотите сделать?", reply_markup=keyboard)
         @bot.callback_query_handler(func=lambda callback: True)
         def caller_worker(callback):
@@ -387,6 +389,10 @@ def manager_answer(message):
             if callback.data == "Ответ":
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 bot.register_next_step_handler(message, get_reply_id)
+            if callback.data == "Отказ":
+                bot.send_message(message.chat.id, "Введите ticket_id:")
+                bot.register_next_step_handler(message, get_refuse_id)
+            
 
 def chose_id(message):
     ticket_id = message.text
@@ -417,6 +423,33 @@ def get_reply_id(message):
         def save_ticket_id(bot_instance, message):
             message.ticket_id = ticket_id
         bot.register_next_step_handler(message, get_reply)
+
+def get_refuse_id(message):
+    ticket_id = message.text
+    if not Message.get(message.session,ticket_id):
+        bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
+    else:
+        user = User.find_by_conversation(message.session, message.chat.id)
+        if user.role_id != RoleNames.MANAGER.value:
+            bot.send_message(message.chat.id, f"Извините, ваша роль не позволяет воспользоваться командой, \
+                нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(message.session, chat).role_id).name}")
+        else:
+            global tic
+            tic = ticket_id
+            bot.send_message(message.chat.id, "Опишите причину закрытия тикета:\n")
+            bot.register_next_step_handler(message, describe_refuse)
+def describe_refuse(message):
+    if not message.text:
+        bot.send_message(message.chat.id, "Описание отказа от тикета обязательно.\n \
+            Опишите причину закрытия тикета\n")
+        bot.register_next_step_handler(message, describe_refuse)
+    else:
+        global tic
+        ticket = Ticket.get_by_id(message.session,tic)
+        ticket.put_refuse_data(message.session, message.text)
+        ticket.reappoint(message.session)
+        bot.send_message(message.chat.id, f"Вы отказались от тикета {tick_id}\n"
+        "Для проверки воспользуйтесь командой /ticket_list.")
         
 def get_reply(message):
     client_id = message.session.query(Message).filter(Message.ticket_id == message.ticket_id).first()
@@ -437,7 +470,6 @@ def cancel(message):
 @bot.message_handler(content_types=["text"])
 def get_updates(message):
     user = message.user
-    print(user.name)
     ticket_id = user.identify_ticket(message.session)
     if ticket_id:
         Message.add(message.session, message.text, ticket_id, message.chat.id)
