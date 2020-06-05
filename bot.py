@@ -12,6 +12,9 @@ cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
+if 'proxy' in cfg.keys():
+    apihelper.proxy = cfg['proxy']
+
 apihelper.ENABLE_MIDDLEWARE = True
 
 @bot.middleware_handler(update_types=['message'])

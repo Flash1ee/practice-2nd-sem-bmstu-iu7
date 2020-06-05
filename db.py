@@ -10,7 +10,7 @@ engine = create_engine(config['database']['url'], echo=config['debug'], poolclas
 Session = sessionmaker(bind=engine)
 
 
-if config['database']['create']:
+if 'create' in config['database'].keys() and config['database']['create']:
     Base.metadata.create_all(engine)
     Roles.init(session)
 
