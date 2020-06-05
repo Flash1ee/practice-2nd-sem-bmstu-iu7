@@ -66,16 +66,19 @@ def active_ticket_list(message):
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif user.role_id == 3:
-        ans = ''
-        for ticket in user.get_active_tickets(message.session):
-            ans += 'Ticket id: ' + str(ticket.id) + '\n'
-            ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
-            if ticket.manager_id == None:
-                ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
-            else:
-                ans += "Manager_id: " + str(ticket.manager_id) + '\n'
-            ans += "Start data: " + str(ticket.start_date) + '\n\n'
-        bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
+        if not user.get_active_tickets(message.session):
+            bot.send_message(message.chat.id, "У вас нет активных тикетов.")
+        else:
+            ans = ''
+            for ticket in user.get_active_tickets(message.session):
+                ans += 'Ticket id: ' + str(ticket.id) + '\n'
+                ans += 'Title: ' + ticket.title + '\n' + 'Manager_id: '
+                if ticket.manager_id == None:
+                    ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
+                else:
+                    ans += "Manager_id: " + str(ticket.manager_id) + '\n'
+                ans += "Start data: " + str(ticket.start_date) + '\n\n'
+            bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     else:
         ans = ''
         #нужно отсортировать, но у меня такое подозрение, что они уже отсортированные
@@ -198,7 +201,6 @@ def create_manager(message):
 def create_admin(message):
     args = message.text.split()
     user = message.user
-    print(user)
     if not user:
         bot.send_message(
             message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
@@ -353,24 +355,27 @@ def ticket_refuse(message):
 # ответ менеджера на тикет
 @bot.message_handler(commands=["message"])
 def manager_answer(message):
-    keyboard = types.InlineKeyboardMarkup()
-    key_history = types.InlineKeyboardButton(text="Просмотреть историю сообщений тикета", callback_data="История")
-    keyboard.add(key_history)
-    key_reply = types.InlineKeyboardButton(text="Выбрать тикет для ответа", callback_data='Ответ')
-    keyboard.add(key_reply)
-    key_show = types.InlineKeyboardButton(text="Просмотреть активные тикеты", callback_data='Просмотр')
-    keyboard.add(key_show)
-    bot.send_message(message.chat.id, "Что Вы хотите сделать?", reply_markup=keyboard)
-    @bot.callback_query_handler(func=lambda callback: True)
-    def caller_worker(callback):
-        if callback.data == "Просмотр":
-            active_ticket_list(message)
-        if callback.data == "История":
-            bot.send_message(message.chat.id, "Введите ticket_id:")
-            bot.register_next_step_handler(message, chose_id)
-        if callback.data == "Ответ":
-            bot.send_message(message.chat.id, "Введите ticket_id:")
-            bot.register_next_step_handler(message, get_reply_id)
+    if message.user.role_id != RoleNames.MANAGER.name:
+        bot.send_message(message.chat.id, "Извините, данная команда недоступна клиенту.")
+    else:
+        keyboard = types.InlineKeyboardMarkup()
+        key_history = types.InlineKeyboardButton(text="Просмотреть историю сообщений тикета", callback_data="История")
+        keyboard.add(key_history)
+        key_reply = types.InlineKeyboardButton(text="Выбрать тикет для ответа", callback_data='Ответ')
+        keyboard.add(key_reply)
+        key_show = types.InlineKeyboardButton(text="Просмотреть активные тикеты", callback_data='Просмотр')
+        keyboard.add(key_show)
+        bot.send_message(message.chat.id, "Что Вы хотите сделать?", reply_markup=keyboard)
+        @bot.callback_query_handler(func=lambda callback: True)
+        def caller_worker(callback):
+            if callback.data == "Просмотр":
+                active_ticket_list(message)
+            if callback.data == "История":
+                bot.send_message(message.chat.id, "Введите ticket_id:")
+                bot.register_next_step_handler(message, chose_id)
+            if callback.data == "Ответ":
+                bot.send_message(message.chat.id, "Введите ticket_id:")
+                bot.register_next_step_handler(message, get_reply_id)
 
 def chose_id(message):
     ticket_id = message.text
@@ -408,7 +413,6 @@ def get_reply_id(message):
 def get_reply(message):
     client_id = message.session.query(Message).filter(Message.ticket_id == message.ticket_id).first()
     client = User.find_by_id(message.session, client_id.sender_id).conversation
-    print("\n\n\n")
     reply = message.text
     Message.add(message.session, reply, message.ticket_id, message.chat.id)
     bot.send_message(client, reply)
