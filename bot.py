@@ -111,10 +111,10 @@ def active_ticket_list(message):
             else:
                 #отсчитывать время с ticket_id/ticket_add
                 first_msg = message.session.query(Message).filter(
-                    Message.sender_id == ticket.client_id and Message.body == "/ticket_id").order_by(desc(Message.date)).first()
+                    Message.sender_id == ticket.client_id).filter(Message.body == "/ticket_id").order_by(desc(Message.date)).first()
                 if not first_msg:
                     first_msg = message.session.query(Message).filter(
-                        Message.sender_id == ticket.client_id and Message.body == "/ticket_add").order_by(desc(Message.date)).first()
+                        Message.sender_id == ticket.client_id).filter(Message.body == "/ticket_add").order_by(desc(Message.date)).first()
                 wait_time = (str(datetime.now() - first_msg.date))
             client = User.find_by_id(message.session, ticket.client_id)
             if client.identify_ticket(message.session) == ticket.id:
@@ -213,18 +213,18 @@ def create_manager(message):
     user = message.user
     if not user:
         bot.send_message(
-            message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start")
+            message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
     elif (len(args)) != 1:
         bot.send_message(
-            message.chat.id, "Много аргументов: команда должна быть /manager_create")
+            message.chat.id, "Много аргументов: команда должна быть /manager_create.")
     else:
         if user.role_id != RoleNames.ADMIN.value:
             bot.send_message(
-                message.chat.id, f"Извините. У вас недостаточно прав, вы - {RoleNames(user.role_id).name}")
+                message.chat.id, f"Извините. У вас недостаточно прав, вы - {RoleNames(user.role_id).name}.")
         else:
             new_token = Token.generate(message.session, RoleNames.MANAGER.value)
             bot.send_message(
-                message.chat.id, f"{new_token.value}\nТокен создан - срок действия 24 часа")
+                message.chat.id, f"{new_token.value}\nТокен создан - срок действия 24 часа.")
 
 @bot.message_handler(commands=["admin_create"])
 def create_admin(message):
@@ -323,7 +323,7 @@ def manager_remove(message):
                         message.chat.id, f"Менеджер с id {manager_id} удалён")
                 elif call.data == "no":
                     bot.send_message(
-                        message.chat.id, "Отменяем операцию удаления")
+                        message.chat.id, "Отменяем операцию удаления.")
 
 # отказ менеджера от тикета
 
@@ -396,10 +396,7 @@ def chose_id(message):
         msg = msg[:20]
         ans = ''
         for m in msg:
-            if User.find_by_id(message.session, m.sender_id).role_id == RoleNames.CLIENT.value:
-                ans += "CLIENT:\n"
-            else:
-                ans += "MANAGER:\n"
+            ans += RoleNames(User.find_by_id(message.session, m.sender_id).role_id).name + '\n'
             ans += "Date: " + str(m.date) + "\n"
             ans += "Message: " + m.body + "\n\n"
         if not ans:
@@ -413,7 +410,7 @@ def get_reply_id(message):
     if not Message.get(message.session,ticket_id):
         bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
     else:
-        bot.send_message(message.chat.id, f"Введите текст ответа на тикет {ticket_id}")
+        bot.send_message(message.chat.id, f"Введите Ваш ответ:")
         @bot.middleware_handler(update_types=['message'])
         def save_ticket_id(bot_instance, message):
             message.ticket_id = ticket_id
