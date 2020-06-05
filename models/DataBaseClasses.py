@@ -318,27 +318,29 @@ class Ticket(Base):
 
     # TODO: UNTESTED
     @staticmethod
-    def create(session, title, conversation):
+    def create(session, title: str, conversation: str) -> 'Ticket or None':
         '''
         Метод создает новый объект класса Ticket с заголовком title, находит client_id
         по переданному параметру conversation, находит manager_id как наиболее свободного менеджера 
         (метод User.get_free_manager) и созданный объект помещает в базу данных.
-        Возвращает 0, если процесс выполнен успешно, и 1, если в базе данных нет менеджера.
+        Возвращает Ticket, если процесс выполнен успешно, и None, если в базе данных нет менеджера.
         '''
         new_ticket = Ticket(title=title)
 
-        client = session.query(User).filter(
-            User.conversation == conversation)[0]
+        client = session.query(User).filter(User.conversation == conversation).first()
         new_ticket.client_id = client.id
 
         manager = User._get_free_manager(session, [])
+
         # если менеджеров нет вообще
-        if manager is None:
-            return 1
+        if not manager:
+            return None
+
         new_ticket.manager_id = manager.id
+
         session.add(new_ticket)
         session.commit()
-        return 0
+        return new_ticket
 
     @staticmethod
     def get_by_id(session, ticket_id):
