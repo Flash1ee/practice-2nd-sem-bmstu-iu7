@@ -323,6 +323,7 @@ class Ticket(Base):
 
         return diff - timedelta(microseconds=diff.microseconds)
 
+        
     @staticmethod
     def get_all_messages(session, ticket_id: int, sender_id: int = None) -> list:
         messages = session.query(Message).filter(Message.ticket_id == ticket_id).order_by(desc(Message.date))

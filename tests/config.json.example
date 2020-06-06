@@ -1,0 +1,12 @@
+{
+  "api_id": 0,
+  "api_hash": "",
+  "bot_wait_time": 3,
+  "bot_user_name": "@bot_name",
+  "http_proxy": true,
+  "http_proxy_url": {
+    "host": "ip_address",
+    "port": 8080
+  },
+  "show_commands": "all|failed|no"
+}
