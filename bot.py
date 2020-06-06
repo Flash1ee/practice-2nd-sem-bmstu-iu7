@@ -94,7 +94,7 @@ def active_ticket_list(message):
                 ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             messages = Message.get(message.session, ticket.id, ticket.client_id)
-            ans += "Wait time: " + ticket.get_wait_time(message.session) + "\n"
+            ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
             bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
@@ -104,7 +104,7 @@ def active_ticket_list(message):
 
 
 
-@bot.message_handler(commands = ["ticket_id"])
+'''@bot.message_handler(commands = ["ticket_id"])
 def chose_ticket(message):
     user = message.user
     if user == None:
@@ -116,7 +116,7 @@ def chose_ticket(message):
         bot.register_next_step_handler(message, switch_for_client)
     else:
         bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите просмотреть. Для просмотра активных "\
-                         "тикетов Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
+                         "тикетов Вы можете воспользоваться кнопкой 'Список моих тикетов'.")
         bot.register_next_step_handler(message, switch_for_superuser)
 def switch_for_client(message):
     if message.text == "/ticket_list":
@@ -150,7 +150,7 @@ def switch_for_superuser(message):
                 role = User.find_by_id(message.session, msg.sender_id).role_id
                 ans += RoleNames(role).name + ": " + msg.body + "\n\n"
             bot.send_message(chat_id, ans)
-
+'''
 
 
 #Закрытие тикета.
@@ -369,7 +369,7 @@ def manager_answer(message):
         keyboard = types.InlineKeyboardMarkup()
         key_input = types.InlineKeyboardButton(text="Добавить сообщение в тикет", callback_data="Добавить")
         keyboard.add(key_input)
-        key_choose = types.InlineKeyboardButton(text="Выбрать тикет для диалога", callback_data='Выбрать')
+        key_choose = types.InlineKeyboardButton(text="Посмотреть новые ответы", callback_data='Ответы')
         keyboard.add(key_choose)
         key_show = types.InlineKeyboardButton(text="Просмотреть историю тикета", callback_data='Просмотр')
         keyboard.add(key_show)
@@ -386,9 +386,8 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 command = "add"
                 bot.register_next_step_handler(message, get_middle, command)
-            if callback.data == "Выбрать":
-                bot.send_message(message.chat.id, "Хорошо, секундочку.")
-                chose_ticket(message)
+            if callback.data == "Ответы:
+                bot.register_next_step_handler(message, new_reply)
             elif callback.data == "Список":
                 active_ticket_list(message)
             elif callback.data == "Создать":
@@ -399,7 +398,11 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 command = "history"
                 bot.register_next_step_handler(message, get_middle, command)
-                
+        def new_reply(message):
+            ans = "Новые сообщения по Вашим тикетам:"
+            pass
+
+    
         def get_middle(message, command):
             ticket_id = message.text
             if not Ticket.get_by_id(message.session, ticket_id):
