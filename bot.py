@@ -402,12 +402,17 @@ def manager_answer(message):
                 bot.register_next_step_handler(message, get_middle, command)
         def get_middle(message, command):
             ticket_id = message.text
-            if not Ticket.get_by_id(message.session, ticket_id):
+            ticket = Ticket.get_by_id(message.session, ticket_id)
+            if not ticket:
                 bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
             else:
                 if command == "add":
-                    bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
-                    bot.register_next_step_handler(message, get_updates, ticket_id)
+                    if ticket.client_id != message.chat.id:
+                        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
+                                         "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
+                    else:
+                        bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
+                        bot.register_next_step_handler(message, get_updates, ticket_id)
                 elif command == "history":
                     ticket = Ticket.get_by_id(message.session, ticket_id)
                     ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
@@ -486,10 +491,14 @@ def chose_id(message):
 
 def get_reply_id(message):
     ticket_id = message.text
-    if not Message.get(message.session,ticket_id):
+    ticket = Ticket.get_by_id(message.session, ticket_id)
+    if not ticket:
         bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
+    elif ticket.client_id != message.chat.id:
+        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
+                         "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
     else:
-        bot.send_message(message.chat.id, f"Введите Ваш ответ:")
+        bot.send_message(message.chat.id, "Введите Ваш ответ:")
         @bot.middleware_handler(update_types=['message'])
         def save_ticket_id(bot_instance, message):
             message.ticket_id = ticket_id
