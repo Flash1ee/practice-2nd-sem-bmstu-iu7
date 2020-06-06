@@ -471,7 +471,7 @@ def manager_answer(message):
                         else:
                             ans += "Close date: " + str(ticket.close_date) + '\n\n'
                         ans += "История переписки:\n\n"
-                        messages = ticket.get_all_messages(message.session, ticket_id, user.id)
+                        messages = ticket.get_all_messages(message.session, ticket_id)
                         for msg in messages:
                             ans += str(msg.date) + "\n"
                             role = User.find_by_id(message.session, msg.sender_id).role_id
