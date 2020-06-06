@@ -76,14 +76,20 @@ def active_ticket_list(message):
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif RoleNames(user.role_id).name == "CLIENT":
-        if not user.get_active_tickets(message.session):
-            bot.send_message(message.chat.id, "У вас нет активных тикетов.")
+        if not user.get_all_tickets(message.session):
+            bot.send_message(message.chat.id, "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
         else:
             ans = ''
-            for ticket in user.get_active_tickets(message.session):
+            for ticket in user.get_all_tickets(message.session):
                 ans += 'Ticket id: ' + str(ticket.id) + '\n'
                 ans += 'Title: ' + ticket.title + '\n'
-                ans += "Start data: " + str(ticket.start_date) + '\n\n'
+                ans += "Start data: " + str(ticket.start_date) + '\n'
+                ans += 'Status: '
+                if ticket.close_date != None:
+                    ans += "Тикет закрыт.\nClose data: " + str(ticket.close_date) + '\n\n'
+                else:
+                    ans += 'Тикет активен. \n\n' 
+                    
             bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     else:
         ans = ''
@@ -104,7 +110,7 @@ def active_ticket_list(message):
 
 
 
-@bot.message_handler(commands = ["ticket_id"])
+'''@bot.message_handler(commands = ["ticket_id"])
 def chose_ticket(message):
     user = message.user
     if user == None:
@@ -116,7 +122,7 @@ def chose_ticket(message):
         bot.register_next_step_handler(message, switch_for_client)
     else:
         bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите просмотреть. Для просмотра активных "\
-                         "тикетов Вы можете воспользоваться командой /ticket_list, а затем снова /ticket_id.")
+                         "тикетов Вы можете воспользоваться кнопкой 'Список моих тикетов'.")
         bot.register_next_step_handler(message, switch_for_superuser)
 def switch_for_client(message):
     if message.text == "/ticket_list":
@@ -150,7 +156,7 @@ def switch_for_superuser(message):
                 role = User.find_by_id(message.session, msg.sender_id).role_id
                 ans += RoleNames(role).name + ": " + msg.body + "\n\n"
             bot.send_message(chat_id, ans)
-
+'''
 
 
 #Закрытие тикета.
@@ -369,8 +375,6 @@ def manager_answer(message):
         keyboard = types.InlineKeyboardMarkup()
         key_input = types.InlineKeyboardButton(text="Добавить сообщение в тикет", callback_data="Добавить")
         keyboard.add(key_input)
-        key_choose = types.InlineKeyboardButton(text="Выбрать тикет для диалога", callback_data='Выбрать')
-        keyboard.add(key_choose)
         key_show = types.InlineKeyboardButton(text="Просмотреть историю тикета", callback_data='Просмотр')
         keyboard.add(key_show)
         key_list = types.InlineKeyboardButton(text="Список моих тикетов", callback_data='Список')
@@ -386,9 +390,6 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 command = "add"
                 bot.register_next_step_handler(message, get_middle, command)
-            if callback.data == "Выбрать":
-                bot.send_message(message.chat.id, "Хорошо, секундочку.")
-                chose_ticket(message)
             elif callback.data == "Список":
                 active_ticket_list(message)
             elif callback.data == "Создать":
@@ -399,7 +400,6 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 command = "history"
                 bot.register_next_step_handler(message, get_middle, command)
-                
         def get_middle(message, command):
             ticket_id = message.text
             if not Ticket.get_by_id(message.session, ticket_id):
