@@ -403,16 +403,12 @@ def manager_answer(message):
         def get_middle(message, command):
             ticket_id = message.text
             ticket = Ticket.get_by_id(message.session, ticket_id)
-            if not ticket:
+            if not ticket or ticket.client_id != message.chat.id:
                 bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
             else:
                 if command == "add":
-                    if ticket.client_id != message.chat.id:
-                        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
-                                         "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
-                    else:
-                        bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
-                        bot.register_next_step_handler(message, get_updates, ticket_id)
+                    bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
+                    bot.register_next_step_handler(message, get_updates, ticket_id)
                 elif command == "history":
                     ticket = Ticket.get_by_id(message.session, ticket_id)
                     ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
@@ -474,11 +470,8 @@ def chose_id(message):
     chat_id = message.chat.id
     user = User.find_by_conversation(message.session, message.chat.id)
     msg = user.get_all_messages(message.session)
-    if not ticket:
-        bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено\n")
-    if ticket.client_id != message.chat.id:
-        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
-            "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
+    if not ticket or ticket.client_id != message.chat.id:
+        bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено.\n")
     else:
         ans = ''
         if msg.count() > 10:
@@ -496,11 +489,8 @@ def chose_id(message):
 def get_reply_id(message):
     ticket_id = message.text
     ticket = Ticket.get_by_id(message.session, ticket_id)
-    if not ticket:
+    if not ticket or ticket.client_id != message.chat.id:
         bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
-    elif ticket.client_id != message.chat.id:
-        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
-                         "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
     else:
         bot.send_message(message.chat.id, "Введите Ваш ответ:")
         @bot.middleware_handler(update_types=['message'])
