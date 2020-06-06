@@ -94,7 +94,7 @@ def active_ticket_list(message):
                 ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             messages = Message.get(message.session, ticket.id, ticket.client_id)
-            ans += "Wait time: " + ticket.get_wait_time(message.session) + "\n"
+            ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
             bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
