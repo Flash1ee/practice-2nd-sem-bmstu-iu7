@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger
-from sqlalchemy import ForeignKey, desc, Text
+from sqlalchemy import ForeignKey, desc, Text, asc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
@@ -119,11 +119,10 @@ class User(Base):
         last_message = session.query(Message).filter_by(
             sender_id=self.id).filter(Message.ticket_id).order_by(desc(Message.date)).first()
 
-
         if not last_message:
             print("NOT LAST MESSAGE")
             return None
-        
+
         print("LAST MESSAGE")
 
         last_ticket_id = last_message.ticket_id
@@ -278,10 +277,12 @@ class Ticket(Base):
         #print(message.ticket.id, message.ticket.client_id, message.ticket.manager_id, message.ticket.title, message.ticket.start_date)
         # print(message.ticket.manager_id)
 
-        res = session.query(Message.ticket_id, func.max(Message.date)).filter(Message.ticket_id != None).group_by(Message.ticket_id).all()
+        res = session.query(Message.ticket_id, func.max(Message.date)).filter(
+            Message.ticket_id != None).group_by(Message.ticket_id).all()
         ticks = []
         for a in res:
-            msg = session.query(Message).filter(Message.ticket_id != None).filter(Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
+            msg = session.query(Message).filter(Message.ticket_id != None).filter(
+                Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
             print(type(msg))
             if msg.sender_id != manager_id and msg.ticket.manager_id == manager_id:
                 ticks.append(msg.ticket_id)
@@ -290,6 +291,25 @@ class Ticket(Base):
         #    Ticket.manager_id == manager_id)
 
         return ticks
+
+    def get_wait_time(self, session) -> 'Timedelta or None':
+        '''
+            Возвращает wait_time текущего тикета
+        '''
+        last_manager_message = session.query(Message).filter(
+            Message.ticket_id == self.id, Message.sender_id == self.manager_id).order_by(desc(Message.date)).first()
+
+        if not last_manager_message:
+            first_client_message = session.query(Message).filter(
+                Message.ticket_id == self.id, Message.sender_id == self.client_id).order_by(asc(Message.date)).first()
+        else:
+            first_client_message = session.query(Message).filter(
+                Message.ticket_id == self.id, Message.sender_id == self.client_id, Message.date > last_manager_message.date).order_by(asc(Message.date)).first()
+
+        if not first_client_message:
+            return None 
+        
+        return datetime.now() - first_client_message.date
 
     def get_all_messages(self, session):
         return session.query(Message).filter(Message.ticket_id == self.id).all()
@@ -342,7 +362,8 @@ class Ticket(Base):
         '''
         new_ticket = Ticket(title=title)
 
-        client = session.query(User).filter(User.conversation == conversation).first()
+        client = session.query(User).filter(
+            User.conversation == conversation).first()
         new_ticket.client_id = client.id
 
         manager = User._get_free_manager(session, [])
@@ -398,7 +419,7 @@ class Message(Base):
         обоих пользователей.
         '''
         messages = session.query(Message).filter(
-            Message.ticket_id == ticket_id)
+            Message.ticket_id == ticket_id).order_by(desc(Message.date))
 
         if user_id:
             messages = messages.filter(Message.sender_id == user_id)
