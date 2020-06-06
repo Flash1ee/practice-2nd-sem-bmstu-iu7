@@ -99,7 +99,6 @@ def active_ticket_list(message):
             if RoleNames(user.role_id).name == "ADMIN":
                 ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
-            messages = Message.get(message.session, ticket.id, ticket.client_id)
             ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
@@ -402,6 +401,7 @@ def manager_answer(message):
                 bot.register_next_step_handler(message, get_middle, command)
         def get_middle(message, command):
             ticket_id = message.text
+            user = message.user
             try:
                 ticket_id = int(ticket_id)
             except:
@@ -409,7 +409,7 @@ def manager_answer(message):
                 manager_answer(message)
             else:
                 ticket = Ticket.get_by_id(message.session, ticket_id)
-                if not ticket or ticket.client_id != message.chat.id:
+                if not ticket or ticket.client_id != user.id:
                     bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
                 else:
                     if command == "add":
@@ -482,7 +482,7 @@ def chose_id(message):
         chat_id = message.chat.id
         user = User.find_by_conversation(message.session, message.chat.id)
         msg = user.get_all_messages(message.session)
-        if not ticket or ticket.client_id != message.chat.id:
+        if not ticket or ticket.client_id != user.id:
             bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено.\n")
         else:
             ans = ''
@@ -506,8 +506,9 @@ def get_reply_id(message):
         bot.send_message(message.chat.id, "Тикет введен некорректно.")
         manager_answer(message)
     else:
+        user = message.user
         ticket = Ticket.get_by_id(message.session, ticket_id)
-        if not ticket or ticket.client_id != message.chat.id:
+        if not ticket or ticket.client_id != user.id:
             bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
         else:
             bot.send_message(message.chat.id, "Введите Ваш ответ:")
