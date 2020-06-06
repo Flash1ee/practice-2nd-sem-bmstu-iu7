@@ -137,6 +137,7 @@ def active_ticket_list(message):
 @bot.message_handler(commands = ["ticket_id"])
 def chose_ticket(message):
     user = message.user
+    print(message)
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -367,9 +368,35 @@ def ticket_refuse(message):
 # ответ менеджера на тикет
 @bot.message_handler(commands=["message"])
 def manager_answer(message):
-    if message.user.role_id != RoleNames.MANAGER.value:
-        bot.send_message(message.chat.id, "Извините, данная команда недоступна клиенту.")
-    else:
+    user_role = message.user.role_id
+    if user_role == RoleNames.CLIENT.value:
+        keyboard = types.InlineKeyboardMarkup()
+        key_input = types.InlineKeyboardButton(text="Добавить сообщение в тикет", callback_data="Добавить")
+        keyboard.add(key_input)
+        key_choose = types.InlineKeyboardButton(text="Выбрать тикет для диалога", callback_data='Выбрать')
+        keyboard.add(key_choose)
+        key_list = types.InlineKeyboardButton(text="Список моих тикетов", callback_data='Список')
+        keyboard.add(key_list)
+        key_new = types.InlineKeyboardButton(text="Создать тикет", callback_data='Создать')
+        keyboard.add(key_new)
+        key_del = types.InlineKeyboardButton(text="Удалить тикет", callback_data='Удалить')
+        keyboard.add(key_del)
+        bot.send_message(message.chat.id, "Что вы хотите сделать?", reply_markup = keyboard)
+        @bot.callback_query_handler(func = lambda callback: True)
+        def caller_worker(callback):
+            if callback.data == "Добавить":
+                get_updates(message)
+            if callback.data == "Выбрать":
+                bot.send_message(message.chat.id, "Хорошо, секундочку.")
+                chose_ticket(message)
+            elif callback.data == "Список":
+                active_ticket_list(message)
+            if callback.data == "Создать":
+                create_ticket(message)
+            if callback.data == "Удалить":
+                close_ticket(message)
+
+    elif user_role == RoleNames.MANAGER.value:
         keyboard = types.InlineKeyboardMarkup()
         key_history = types.InlineKeyboardButton(text="Просмотреть историю сообщений тикета", callback_data="История")
         keyboard.add(key_history)
@@ -383,7 +410,7 @@ def manager_answer(message):
         @bot.callback_query_handler(func=lambda callback: True)
         def caller_worker(callback):
             if callback.data == "Просмотр":
-                active_ticket_list(message)
+                bot.register_next_step_handler(message, get_active_list)
             if callback.data == "История":
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 bot.register_next_step_handler(message, chose_id)
@@ -470,7 +497,6 @@ def get_reply(message):
 def cancel(message):
     pass
 
-@bot.message_handler(content_types=["text"])
 def get_updates(message):
     user = message.user
     ticket_id = user.identify_ticket(message.session)
