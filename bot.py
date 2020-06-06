@@ -80,7 +80,7 @@ def active_ticket_list(message):
     """
         Просмотр активных тикетов
     """
-    user = User.find_by_conversation(message.session, message.chat.id)
+    user = message.user
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -471,12 +471,7 @@ def manager_answer(message):
                         else:
                             ans += "Close date: " + str(ticket.close_date) + '\n\n'
                         ans += "История переписки:\n\n"
-<<<<<<< HEAD
-                        ticket = Ticket.get_by_id(message.session, ticket_id)
-                        messages = ticket.get_all_messages(message.session, ticket.id)
-=======
-                        messages = ticket.get_all_messages(message.session, ticket_id)
->>>>>>> 75ba42415b9e191c8356e03e12135cdc93810083
+                        messages = ticket.get_all_messages(message.session, ticket_id)[::-1]
                         for msg in messages:
                             ans += str(msg.date) + "\n"
                             role = User.find_by_id(message.session, msg.sender_id).role_id
@@ -509,7 +504,7 @@ def manager_answer(message):
         @bot.callback_query_handler(func=lambda callback: True)
         def caller_worker(callback):
             if callback.data == "Просмотр":
-                bot.register_next_step_handler(message, active_ticket_list)
+                active_ticket_list(message)
             if callback.data == "История":
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 bot.register_next_step_handler(message, chose_id)
@@ -535,12 +530,13 @@ def chose_id(message):
         ticket = Ticket.get_by_id(message.session, ticket_id)
         chat_id = message.chat.id
         user = User.find_by_conversation(message.session, message.chat.id)
-        msg = user.get_all_messages(message.session)
-        if not ticket or ticket.client_id != user.id:
+        msg = Ticket.get_all_messages(message.session, ticket_id)
+        print(msg)
+        if not ticket or user.id not in (ticket.manager_id, ticket.client_id):
             bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено.\n")
         else:
             ans = ''
-            if msg.count() > 10:
+            if len(msg) > 10:
                 msg = msg.get(10)
             for m in msg:
                 ans += RoleNames(User.find_by_id(message.session, m.sender_id).role_id).name + '\n'
@@ -562,7 +558,7 @@ def get_reply_id(message):
     else:
         user = message.user
         ticket = Ticket.get_by_id(message.session, ticket_id)
-        if not ticket or ticket.client_id != user.id:
+        if not ticket or user.id not in (ticket.manager_id, ticket.client_id):
             bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
         else:
             bot.send_message(message.chat.id, "Введите Ваш ответ:")
@@ -610,7 +606,6 @@ def get_reply(message):
     client = User.find_by_id(message.session, client_id.sender_id).conversation
     reply = message.text
     Message.add(message.session, reply, message.ticket_id, message.chat.id)
-    bot.send_message(client, reply)
     bot.send_message(message.chat.id, "Ответ отправлен.")
 
 # Команды адмиинистратора:
