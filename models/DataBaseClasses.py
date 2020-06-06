@@ -118,20 +118,36 @@ class User(Base):
     def identify_ticket(self, session) -> int:
         last_message = session.query(Message).filter_by(
             sender_id=self.id).filter(Message.ticket_id).order_by(desc(Message.date)).first()
+
+
+        if not last_message:
+            print("NOT LAST MESSAGE")
+            return None
+        
+        print("LAST MESSAGE")
+
         last_ticket_id = last_message.ticket_id
         return last_ticket_id
 
     # Static methods
 
     @staticmethod
-    def add(session, conversation: int, name: str, role_id: int) -> None:
+    def add(session, conversation: int, name: str, role_id: int) -> 'User':
         '''
+        Добавляет нового пользователя в базу.
+        Возвращаемое значение: новый пользователь или старый, если пользователь уже есть в базе.
         role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value
         Autocommit = ON
         '''
-        session.add(User(conversation=conversation,
-                         name=name, role_id=role_id))
+        check_user = User.find_by_conversation(session, conversation)
+        if check_user:
+            return check_user
+
+        new_user = User(conversation=conversation, name=name, role_id=role_id)
+        session.add(new_user)
         session.commit()
+
+        return new_user
 
     @staticmethod
     def get_all_users_with_role(session, role_id: int) -> list:
@@ -151,7 +167,7 @@ class User(Base):
 
     @staticmethod
     def find_by_conversation(session, user_conversation: int) -> 'User or None':
-        return session.query(User).filter_by(conversation=user_conversation).first()
+        return session.query(User).filte(User.conversation == user_conversation).first()
 
     @staticmethod
     def change_name(session, new_name, user_conversation) -> None:
