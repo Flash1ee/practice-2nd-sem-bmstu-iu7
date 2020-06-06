@@ -13,7 +13,6 @@ Session = sessionmaker(bind=engine)
 if 'create' in config['database'].keys() and config['database']['create']:
     session = Session()
     Base.metadata.create_all(engine)
-<<<<<<< HEAD
     Role.init(session)
 
 
@@ -26,6 +25,3 @@ messages = User.get_messages(session, 955206847)
 
 for m in messages:
     print(m.body)
-=======
-    Roles.init(session)
->>>>>>> 43d0cb39f75546fae2bf319482944c76c9e79f76
