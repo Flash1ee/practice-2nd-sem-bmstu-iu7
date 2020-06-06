@@ -169,8 +169,8 @@ def close_ticket(message):
         bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров.\n Воспользуйтесь командой "\
                          "/help, чтобы просмотреть список возможных команд.")
     else:
-        bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть.\n Для просмотра активных "\
-                         "тикетов\n Вы можете воспользоваться командой /ticket_list.")
+        bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть.\nДля просмотра активных "\
+                         "тикетов\nВы можете воспользоваться командой\n /ticket_list.")
         bot.register_next_step_handler(message, ticket_close)
 def ticket_close(message):
     ticket = Ticket.get_by_id(message.session, message.text)
@@ -183,7 +183,7 @@ def ticket_close(message):
         bot.send_message(message.chat.id, "Тикет уже закрыт.")
     else:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
-    ticket.close(message.session)
+        ticket.close(message.session)
 
 
 @bot.message_handler(commands=["manager_create"])
