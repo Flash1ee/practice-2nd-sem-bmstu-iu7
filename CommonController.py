@@ -56,9 +56,9 @@ def init(bot):
             if not User.get_all_users_with_role(message.session, RoleNames.ADMIN.value):
                 cur_role = RoleNames.ADMIN.value
         if cur_role:
+            User.add(message.session, chat_id, username, cur_role)
             if RoleNames(cur_role).name == "CLIENT":
                 Message.add(message.session, "/start", None, message.chat.id)
-            User.add(message.session, chat_id, username, cur_role)
             bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
         else:
             user = message.user
