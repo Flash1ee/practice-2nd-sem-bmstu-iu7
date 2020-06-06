@@ -180,8 +180,7 @@ def close_ticket(message):
         bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой "\
                          "/help, чтобы просмотреть список возможных команд.")
     else:
-        bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть. Для просмотра активных "\
-                         "тикетов Вы можете воспользоваться командой /ticket_list.")
+        bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите закрыть.")
         bot.register_next_step_handler(message, ticket_close)
 def ticket_close(message):
     """
@@ -464,7 +463,6 @@ def manager_answer(message):
                         bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
                         bot.register_next_step_handler(message, get_updates, ticket_id)
                     elif command == "history":
-                        ticket = Ticket.get_by_id(message.session, ticket_id)
                         ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
                         ans += 'Title: ' + ticket.title + '\n'
                         ans += "Start date: " + str(ticket.start_date) + '\n'
@@ -473,8 +471,12 @@ def manager_answer(message):
                         else:
                             ans += "Close date: " + str(ticket.close_date) + '\n\n'
                         ans += "История переписки:\n\n"
+<<<<<<< HEAD
                         ticket = Ticket.get_by_id(message.session, ticket_id)
                         messages = ticket.get_all_messages(message.session, ticket.id)
+=======
+                        messages = ticket.get_all_messages(message.session, ticket_id)
+>>>>>>> 75ba42415b9e191c8356e03e12135cdc93810083
                         for msg in messages:
                             ans += str(msg.date) + "\n"
                             role = User.find_by_id(message.session, msg.sender_id).role_id
