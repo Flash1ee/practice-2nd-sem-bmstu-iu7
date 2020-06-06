@@ -383,8 +383,9 @@ def manager_answer(message):
         @bot.callback_query_handler(func = lambda callback: True)
         def caller_worker(callback):
             if callback.data == "Добавить":
-                bot.send_message(message.chat.id, "Введите ticket_id")
-                bot.register_next_step_handler(message, get_middle)
+                bot.send_message(message.chat.id, "Введите ticket_id:")
+                command = "add"
+                bot.register_next_step_handler(message, get_middle, command)
             if callback.data == "Выбрать":
                 bot.send_message(message.chat.id, "Хорошо, секундочку.")
                 chose_ticket(message)
@@ -395,16 +396,37 @@ def manager_answer(message):
             elif callback.data == "Удалить":
                 close_ticket(message)
             elif callback.data == "Просмотр":
-                pass
-                #TODO 
-                # История переписки конкретного тикета
-        def get_middle(message):
+                bot.send_message(message.chat.id, "Введите ticket_id:")
+                command = "history"
+                bot.register_next_step_handler(message, get_middle, command)
+                
+        def get_middle(message, command):
             ticket_id = message.text
             if not Ticket.get_by_id(message.session, ticket_id):
                 bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
             else:
-                bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
-                bot.register_next_step_handler(message, get_updates, ticket_id)
+                if command == "add":
+                    bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
+                    bot.register_next_step_handler(message, get_updates, ticket_id)
+                elif command == "history":
+                    ticket = Ticket.get_by_id(message.session, ticket_id)
+                    ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
+                    ans += 'Title: ' + ticket.title + '\n'
+                    ans += "Start date: " + str(ticket.start_date) + '\n'
+                    if ticket.close_date == None:
+                        ans += "Close date: Тикет активный. \n\n"
+                    else:
+                        ans += "Close date: " + str(ticket.close_date) + '\n\n'
+                    ans += "История переписки:\n\n"
+                    messages = ticket.get_all_messages(message.session)
+                    for msg in messages:
+                        ans += str(msg.date) + "\n"
+                        role = User.find_by_id(message.session, msg.sender_id).role_id
+                        if RoleNames(role).name == "CLIENT":
+                            ans += "Вы: " + msg.body + "\n\n"
+                        else:
+                            ans += RoleNames(role).name + ": " + msg.body + "\n\n"
+                    bot.send_message(message.chat.id, ans)
                     
         def get_updates(message, ticket_id):
             user = message.user
