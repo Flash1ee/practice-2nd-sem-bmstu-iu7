@@ -90,7 +90,7 @@ def active_ticket_list(message):
                 else:
                     ans += 'Тикет активен. \n\n' 
                     
-            bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
+            bot.send_message(message.chat.id, "Список тикетов:\n\n" + ans)
     else:
         ans = ''
         for ticket in user.get_active_tickets(message.session):
@@ -105,7 +105,7 @@ def active_ticket_list(message):
         if ans == '':
             bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
         else:
-            bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
+            bot.send_message(message.chat.id, "Список тикетов:\n\n" + ans)
 
 
 
@@ -183,7 +183,7 @@ def ticket_close(message):
         bot.send_message(message.chat.id, "Тикет уже закрыт.")
     else:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
-    ticket.close(message.session)
+        ticket.close(message.session)
 
 
 @bot.message_handler(commands=["manager_create"])
