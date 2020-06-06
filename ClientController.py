@@ -23,7 +23,7 @@ def init(bot):
             bot.register_next_step_handler(message, get_ticket_body)
     def get_ticket_body(message):
         user = message.user
-        Message.add(message.session, message.text, user.get_active_tickets(message.session).order_by(Ticket.start_date).first().id, message.chat.id)
+        Message.add(message.session, message.text, user.get_active_tickets(message.session)[0].id, message.chat.id)
         Message.add(message.session, "/ticket_add", None, message.chat.id)
         bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
 
