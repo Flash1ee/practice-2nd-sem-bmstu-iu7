@@ -33,7 +33,7 @@ def auth_middleware(bot_instance, message):
     message.user = User.find_by_conversation(message.session, chat_id)
 
 @bot.middleware_handler(update_types=['message'])
-def session_middleware(bot_instance, message):
+def set_empty_text_middleware(bot_instance, message):
     """
         Фиксим отсутствие поля text
     """
@@ -46,6 +46,9 @@ ClientController.init(bot)
 # вход в систему менеджера/админа
 @bot.message_handler(commands=["superuser_init"])
 def create_superuser(message):
+    """
+        Добавление роли пользователю по токену
+    """
     args = message.text.split()
     user = message.user
     if not user:
@@ -68,9 +71,11 @@ def create_superuser(message):
                 message.chat.id, "Не удалось авторизоваться в системе. Попробуйте еще раз.")
 
 
-#Просмотр активных тикетов.
 @bot.message_handler(commands=["ticket_list"])
 def active_ticket_list(message):
+    """
+        Просмотр активных тикетов
+    """
     user = User.find_by_conversation(message.session, message.chat.id)
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
@@ -159,9 +164,11 @@ def switch_for_superuser(message):
 '''
 
 
-#Закрытие тикета.
 @bot.message_handler(commands = ["ticket_close"])
 def close_ticket(message):
+    """
+        Закрытие тикета клиентом
+    """
     if not message.user:
         bot.send_message(message.chat.id, "Для того, чтобы закрыть тикет, необходимо зарегистрироваться в " \
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -173,6 +180,9 @@ def close_ticket(message):
                          "тикетов Вы можете воспользоваться командой /ticket_list.")
         bot.register_next_step_handler(message, ticket_close)
 def ticket_close(message):
+    """
+        Обработка закрытия тикета
+    """
     ticket = Ticket.get_by_id(message.session, message.text)
     if not ticket:
         bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Команда прервана.\nПовторите попытку.")
@@ -188,6 +198,9 @@ def ticket_close(message):
 
 @bot.message_handler(commands=["manager_create"])
 def create_manager(message):
+    """
+        Создание токена нового менеджера
+    """
     args = message.text.split()
     user = message.user
     if not user:
@@ -207,6 +220,9 @@ def create_manager(message):
 
 @bot.message_handler(commands=["admin_create"])
 def create_admin(message):
+    """
+        Создание токена нового админа
+    """
     args = message.text.split()
     user = message.user
     if not user:
@@ -226,6 +242,9 @@ def create_admin(message):
 
 @bot.message_handler(commands=["manager_list"])
 def get_manager_list(message):
+    """
+        Получение списка менеджеров
+    """
     args = message.text.split()
     user = message.user
     if not user:
@@ -248,6 +267,9 @@ def get_manager_list(message):
 
 @bot.message_handler(commands=["role"])
 def check_role(message):
+    """
+        Команда выводит текущую роль пользователя
+    """
     user = message.user
     if not user:
         bot.send_message(
@@ -260,6 +282,9 @@ def check_role(message):
 # удаление менеджера
 @bot.message_handler(commands=["manager_remove"])
 def manager_remove(message):
+    """
+        Удаление менеджера (разжалование)
+    """
     args = message.text.split()
     user = message.user
     if not user:
@@ -304,10 +329,10 @@ def manager_remove(message):
                     bot.send_message(
                         message.chat.id, "Отменяем операцию удаления.")
 
-# отказ менеджера от тикета
-
-
 def describe(message):
+    """
+        Описание причины отказа от тикента менеджера
+    """
     if not message.text:
         bot.send_message(chat, "Описание отказа от тикета обязательно.\n \
             Опишите причину закрытия тикета\n")
@@ -319,8 +344,12 @@ def describe(message):
         ticket.reappoint(message.session)
         bot.send_message(message.chat.id, f"Вы отказались от тикета {tick_id}\n"
         "Для проверки воспользуйтесь командой /ticket_list")
+
 @bot.message_handler(commands=["ticket_refuse"])
 def ticket_refuse(message):
+    """
+        Коммманда отказа менеджера от тикета
+    """
     args = message.text.split()
     user = message.user
     chat = message.chat.id
@@ -340,6 +369,9 @@ def ticket_refuse(message):
 
 @bot.message_handler(commands = ["ticket_add"])
 def create_ticket(message):
+    """
+        Команда создания тикета клиентом
+    """
     user = message.user
     if not user:
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
@@ -351,6 +383,9 @@ def create_ticket(message):
             bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
             bot.register_next_step_handler(message, get_title)
 def get_title(message):
+    """
+        Получение заголовка тикета
+    """
     user = message.user
     bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
     new_ticket = Ticket.create(message.session, message.text, message.chat.id)
@@ -359,6 +394,9 @@ def get_title(message):
     else:
         bot.register_next_step_handler(message, get_ticket_body, new_ticket.id)
 def get_ticket_body(message, ticket_id: int):
+    """
+        Получение описания тикета
+    """
     user = message.user
     # Message.add(message.session, message.text, user.get_active_tickets(message.session)[-1].id, message.chat.id)
     Message.add(message.session, message.text, ticket_id, message.chat.id)
@@ -366,10 +404,11 @@ def get_ticket_body(message, ticket_id: int):
 
     
 
-
-# ответ менеджера на тикет
 @bot.message_handler(commands=["message"])
 def manager_answer(message):
+    """
+        ответ менеджера на тикет
+    """
     user_role = message.user.role_id
     if user_role == RoleNames.CLIENT.value:
         keyboard = types.InlineKeyboardMarkup()
@@ -469,6 +508,9 @@ def manager_answer(message):
             
 
 def chose_id(message):
+    """
+        Выбор тикета
+    """
     ticket_id = message.text
     ticket = Ticket.get_by_id(message.session, ticket_id)
     chat_id = message.chat.id
@@ -548,7 +590,7 @@ def cancel(message):
     pass
 
 @bot.middleware_handler(update_types=['message'])
-def session_middleware(bot_instance, message):
+def close_session_middleware(bot_instance, message):
     """
        Завершение сессии БД
     """

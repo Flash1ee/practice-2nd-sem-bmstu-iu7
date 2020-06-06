@@ -13,6 +13,6 @@ Session = sessionmaker(bind=engine)
 if 'create' in config['database'].keys() and config['database']['create']:
     session = Session()
     Base.metadata.create_all(engine)
-    Roles.init(session)
+    Role.init(session)
 
 # session = Session()
