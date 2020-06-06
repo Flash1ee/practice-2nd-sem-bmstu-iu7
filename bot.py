@@ -83,47 +83,18 @@ def active_ticket_list(message):
             for ticket in user.get_active_tickets(message.session):
                 ans += 'Ticket id: ' + str(ticket.id) + '\n'
                 ans += 'Title: ' + ticket.title + '\n'
-                if ticket.manager_id == None:
-                    ans += "Менеджер еще не найден. Поиск менеджера..." + '\n'
-                else:
-                    ans += "Manager_id: " + str(ticket.manager_id) + '\n'
                 ans += "Start data: " + str(ticket.start_date) + '\n\n'
             bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     else:
         ans = ''
-        #нужно отсортировать, но у меня такое подозрение, что они уже отсортированные
         for ticket in user.get_active_tickets(message.session):
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n'
-            ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
+            if RoleNames(user.role_id).name == "ADMIN":
+                ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             messages = Message.get(message.session, ticket.id, ticket.client_id)
-            #получить последний ответ менеджера по тикету, если он есть
-            wait_time = "00:00:00"
-            last_msg = message.session.query(Message).filter(
-                Message.sender_id == ticket.manager_id).filter(Message.ticket_id == ticket.id).order_by(desc(Message.date)).first()
-            if last_msg:
-                #нужно получить следующее сообщение клиента на этот ответ
-                first_msg = message.session.query(Message).filter(
-                    Message.sender_id == ticket.client_id and Message.date > last_msg.date).order_by(Message.date).first()
-                if first_msg:
-                    wait_time = (str(datetime.now() - first_msg.date))
-            else:
-                #отсчитывать время с ticket_id/ticket_add
-                first_msg = message.session.query(Message).filter(
-                    Message.sender_id == ticket.client_id).filter(Message.body == "/ticket_id").order_by(desc(Message.date)).first()
-                if not first_msg:
-                    first_msg = message.session.query(Message).filter(
-                        Message.sender_id == ticket.client_id).filter(Message.body == "/ticket_add").order_by(desc(Message.date)).first()
-                    if first_msg:
-                        wait_time = (str(datetime.now() - first_msg.date))
-            client = User.find_by_id(message.session, ticket.client_id)
-            if client.identify_ticket(message.session) == ticket.id:
-                ans += "Status: Клиент ожидает ответа на этот тикет!\n"
-                ans += "Wait time: " + wait_time.split(".")[0] + "\n"
-            else:
-                ans += "Status: Работа по тикету приостановлена.\n"
-                ans += "Wait time: " + "-" + "\n"
+            ans += "Wait time: " + ticket.get_wait_time(message.session) + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
             bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
@@ -198,11 +169,12 @@ def close_ticket(message):
 def ticket_close(message):
     ticket = Ticket.get_by_id(message.session, message.text)
     if not ticket:
-        bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Команда прервана\nПовторите попытку.")
-        return
-    if User.find_by_id(message.session, ticket.client_id).role_id == RoleNames.ADMIN.value:
+        bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Команда прервана.\nПовторите попытку.")
+    elif User.find_by_id(message.session, ticket.client_id).role_id == RoleNames.ADMIN.value:
         bot.send_message(message.chat.id, f"Тикет {message.text} был закрыт по решению администратора. Для уточнения информации "\
                 "обратитесь к менеджеру.")
+    elif ticket.close_date != None:
+        bot.send_message(message.chat.id, "Тикет уже закрыт.")
     else:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
     ticket.close(message.session)
@@ -408,24 +380,11 @@ def manager_answer(message):
             types.InlineKeyboardButton(text="Удалить тикет", callback_data='Удалить')
         )
         bot.send_message(message.chat.id, "Что вы хотите сделать?", reply_markup = keyboard)
-
-        def get_middle(message):
-            ticket_id = message.text
-            if not Ticket.get_by_id(message.session, ticket_id):
-                bot.send_message(message.chat.id, "Тикет не найден.")
-            else:
-                bot.send_message(message.chat.id, "Хорошо, введите номер ваше сообщение.")
-                bot.register_next_step_handler(message, get_updates, ticket_id)
-
-
         @bot.callback_query_handler(func = lambda callback: True)
         def caller_worker(callback):
             if callback.data == "Добавить":
                 bot.send_message(message.chat.id, "Введите ticket_id")
                 bot.register_next_step_handler(message, get_middle)
-                
-
-
             if callback.data == "Выбрать":
                 bot.send_message(message.chat.id, "Хорошо, секундочку.")
                 chose_ticket(message)
@@ -439,8 +398,21 @@ def manager_answer(message):
                 pass
                 #TODO 
                 # История переписки конкретного тикета
-
-        
+        def get_middle(message):
+            ticket_id = message.text
+            if not Ticket.get_by_id(message.session, ticket_id):
+                bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
+            else:
+                bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
+                bot.register_next_step_handler(message, get_updates, ticket_id)
+                    
+        def get_updates(message, ticket_id):
+            user = message.user
+            if ticket_id:
+                Message.add(message.session, message.text, ticket_id, message.chat.id)
+                bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен менеджеру, ожидайте.")
+            else:
+                bot.send_message(message.chat.id, "Чтобы задать вопрос, воспользуйтесь командой /ticket_add.")
 
 
     elif user_role == RoleNames.MANAGER.value:
@@ -543,15 +515,6 @@ def get_reply(message):
 @bot.message_handler(commands=["cancel"])
 def cancel(message):
     pass
-
-def get_updates(message, ticket_id):
-    user = message.user
-    #ticket_id = user.identify_ticket(message.session)
-    if ticket_id:
-        Message.add(message.session, message.text, ticket_id, message.chat.id)
-        bot.send_message(message.chat.id, "Вопрос менеджеру отправлен, ожидайте.")
-    else:
-        bot.send_message(message.chat.id, "Чтобы задать вопрос, воспользуйтесь командой /ticket_add.")
 
 @bot.middleware_handler(update_types=['message'])
 def session_middleware(bot_instance, message):
