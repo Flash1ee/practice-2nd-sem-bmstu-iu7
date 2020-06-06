@@ -99,7 +99,7 @@ def active_ticket_list(message):
             if RoleNames(user.role_id).name == "ADMIN":
                 ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
-            messages = Message.get(message.session, ticket.id, ticket.client_id)
+            messsages = Ticket.get_all_messages(message.session, ticket_id, ticket.client_id)
             ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
@@ -424,7 +424,7 @@ def manager_answer(message):
                     else:
                         ans += "Close date: " + str(ticket.close_date) + '\n\n'
                     ans += "История переписки:\n\n"
-                    messages = ticket.get_all_messages(message.session)
+                    messages = Ticket.get_all_messages(message.session, ticket.id)
                     for msg in messages:
                         ans += str(msg.date) + "\n"
                         role = User.find_by_id(message.session, msg.sender_id).role_id
@@ -504,7 +504,7 @@ def get_reply_id(message):
 
 def get_refuse_id(message):
     ticket_id = message.text
-    if not Message.get(message.session,ticket_id):
+    if not Ticket.get_all_messages(message.session, ticket_id):
         bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
     else:
         user = User.find_by_conversation(message.session, message.chat.id)

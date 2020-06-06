@@ -15,4 +15,13 @@ if 'create' in config['database'].keys() and config['database']['create']:
     Base.metadata.create_all(engine)
     Roles.init(session)
 
-# session = Session()
+
+
+
+session = Session()
+
+
+messages = User.get_messages(session, 955206847)
+
+for m in messages:
+    print(m.body)
