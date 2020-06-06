@@ -116,7 +116,8 @@ def active_ticket_list(message):
                 if not first_msg:
                     first_msg = message.session.query(Message).filter(
                         Message.sender_id == ticket.client_id).filter(Message.body == "/ticket_add").order_by(desc(Message.date)).first()
-                    wait_time = (str(datetime.now() - first_msg.date))
+                    if first_msg:
+                        wait_time = (str(datetime.now() - first_msg.date))
             client = User.find_by_id(message.session, ticket.client_id)
             if client.identify_ticket(message.session) == ticket.id:
                 ans += "Status: Клиент ожидает ответа на этот тикет!\n"
