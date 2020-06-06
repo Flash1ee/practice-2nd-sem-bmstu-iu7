@@ -454,7 +454,7 @@ def manager_answer(message):
                 ticket_id = int(ticket_id)
             except:
                 bot.send_message(message.chat.id, "Тикет введен некорректно.")
-                manager_answer(message)
+                bot.register_next_step_handler(message, manager_answer)
             else:
                 ticket = Ticket.get_by_id(message.session, ticket_id)
                 if not ticket or ticket.client_id != user.id:
@@ -473,7 +473,8 @@ def manager_answer(message):
                         else:
                             ans += "Close date: " + str(ticket.close_date) + '\n\n'
                         ans += "История переписки:\n\n"
-                        messages = ticket.get_all_messages(message.session)
+                        ticket = Ticket.get_by_id(message.session, ticket_id)
+                        messages = ticket.get_all_messages(message.session, ticket.id)
                         for msg in messages:
                             ans += str(msg.date) + "\n"
                             role = User.find_by_id(message.session, msg.sender_id).role_id
