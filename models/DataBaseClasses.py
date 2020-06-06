@@ -310,8 +310,9 @@ class Ticket(Base):
         if not first_client_message:
             return None 
         
-        return diff = datetime.now() - first_client_message.date
+        diff = datetime.now() - first_client_message.date
 
+        return diff - timedelta(microseconds=diff.microseconds)
 
     def get_all_messages(self, session):
         return session.query(Message).filter(Message.ticket_id == self.id).all()
