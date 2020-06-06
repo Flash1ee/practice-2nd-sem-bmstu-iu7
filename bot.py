@@ -309,7 +309,7 @@ def manager_remove(message):
 
 def describe(message):
     if not message.text:
-        bot.send_message(chat, "Описание отказа от тикета обязательно.\n \
+        bot.send_message(message.chat.id, "Описание отказа от тикета обязательно.\n \
             Опишите причину закрытия тикета\n")
         bot.register_next_step_handler(message, describe)
     else:
