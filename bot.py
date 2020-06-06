@@ -200,10 +200,11 @@ def close_ticket(message):
                          "тикетов Вы можете воспользоваться командой /ticket_list.")
         bot.register_next_step_handler(message, ticket_close)
 def ticket_close(message):
-    ticket = Ticket.get_by_id(message.text)
+    ticket = Ticket.get_by_id(message.session, message.text)
     if not ticket:
         bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Попробуйте еще раз.")
-    if User.find_by_id(ticket.sender_id).role_id == RoleNames.ADMIN.value:
+        return
+    if User.find_by_id(message.session, ticket.client_id).role_id == RoleNames.ADMIN.value:
         bot.send_message(message.chat.id, f"Тикет {message.text} был закрыт по решению администратора. Для уточнения информации "\
                 "обратитесь к менеджеру.")
     else:
