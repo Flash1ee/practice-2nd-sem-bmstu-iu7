@@ -167,7 +167,7 @@ class User(Base):
 
     @staticmethod
     def find_by_conversation(session, user_conversation: int) -> 'User or None':
-        return session.query(User).filte(User.conversation == user_conversation).first()
+        return session.query(User).filter(User.conversation == user_conversation).first()
 
     @staticmethod
     def change_name(session, new_name, user_conversation) -> None:
@@ -358,7 +358,7 @@ class Ticket(Base):
         return new_ticket
 
     @staticmethod
-    def get_by_id(session, ticket_id):
+    def get_by_id(session, ticket_id) -> 'Ticket or None':
         return session.query(Ticket).get(ticket_id)
 
 
