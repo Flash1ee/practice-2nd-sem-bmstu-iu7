@@ -99,7 +99,7 @@ def active_ticket_list(message):
             if RoleNames(user.role_id).name == "ADMIN":
                 ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
-            messsages = Ticket.get_all_messages(message.session, ticket_id, ticket.client_id):
+            messsages = Ticket.get_all_messages(message.session, ticket_id, ticket.client_id)
             ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
