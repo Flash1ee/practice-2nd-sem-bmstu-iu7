@@ -472,9 +472,13 @@ def chose_id(message):
     ticket_id = message.text
     ticket = Ticket.get_by_id(message.session, ticket_id)
     chat_id = message.chat.id
-    msg = message.session.query(Message).filter(Message.sender_id == ticket.client_id).order_by(desc(Message.date))
-    if not msg:
+    user = User.find_by_conversation(message.session, message.chat.id)
+    msg = user.get_all_messages(message.session)
+    if not ticket:
         bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено\n")
+    if ticket.client_id != message.chat.id:
+        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
+            "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
     else:
         ans = ''
         if msg.count() > 10:
