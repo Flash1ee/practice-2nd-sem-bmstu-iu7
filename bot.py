@@ -408,7 +408,7 @@ def manager_answer(message):
         def get_middle(message, command):
             ticket_id = message.text
             ticket = Ticket.get_by_id(message.session, ticket_id)
-            if not ticket or ticket.client_id != message.chat.id:
+            if not ticket or ticket.client_id != message.user.id:
                 bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
             else:
                 if command == "add":
