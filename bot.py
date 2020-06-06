@@ -83,7 +83,13 @@ def active_ticket_list(message):
             for ticket in user.get_all_tickets(message.session):
                 ans += 'Ticket id: ' + str(ticket.id) + '\n'
                 ans += 'Title: ' + ticket.title + '\n'
-                ans += "Start data: " + str(ticket.start_date) + '\n\n'
+                ans += "Start data: " + str(ticket.start_date) + '\n'
+                ans += 'Status: '
+                if ticket.close_date != None:
+                    ans += "Тикет закрыт.\nClose data: " + str(ticket.close_date) + '\n\n'
+                else:
+                    ans += 'Тикет активен. \n\n' 
+                    
             bot.send_message(message.chat.id, "Список активных тикетов:\n\n" + ans)
     else:
         ans = ''
