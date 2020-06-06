@@ -1,3 +1,7 @@
+"""
+    Контроллер общих функций бота 
+"""
+
 from models.DataBaseClasses import *
 def init(bot):
     @bot.message_handler(commands = ["help"])

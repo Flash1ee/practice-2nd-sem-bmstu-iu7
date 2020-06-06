@@ -1,3 +1,7 @@
+"""
+    Файл основной логики бота 
+"""
+
 from telebot import apihelper
 import json
 from db import Session

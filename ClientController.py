@@ -1,7 +1,10 @@
+"""
+    Контроллер клиента
+"""
+
 from models.DataBaseClasses import *
 
 def init(bot):
-    #Открытие нового тикета.
     @bot.message_handler(commands = ["ticket_add"])
     def create_ticket(message):
         """
