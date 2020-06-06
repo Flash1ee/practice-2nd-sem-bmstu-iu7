@@ -11,7 +11,6 @@ def init(bot):
         commands += "/help - Вызов данного сообщения.\n\n"
         commands += "/start - вход в систему\n\n"
         if RoleNames(user.role_id).name == "CLIENT":
-            Message.add(message.session, "/help", None, message.chat.id)
             commands += "/ticket_add - Создать новый тикет, с помощью которого Вы сможете описать задать Ваш вопрос менеджерам приложения.\n\n"\
                 "/ticket_id - Выбрать тикет для переписки. Внимание: После вызова этой команды следующим сообщением необходимо указать"\
                 "номер нужного тикета.\n\n"\
@@ -57,8 +56,6 @@ def init(bot):
                 cur_role = RoleNames.ADMIN.value
         if cur_role:
             User.add(message.session, chat_id, username, cur_role)
-            if RoleNames(cur_role).name == "CLIENT":
-                Message.add(message.session, "/start", None, message.chat.id)
             bot.send_message(chat_id, f'{username}, Вы успешно зарегистрировались в системе.\nВаш статус - {RoleNames(cur_role).name}')
         else:
             user = message.user

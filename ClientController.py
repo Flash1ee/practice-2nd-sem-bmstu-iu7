@@ -26,7 +26,6 @@ def init(bot):
         user = message.user
         # Message.add(message.session, message.text, user.get_active_tickets(message.session)[-1].id, message.chat.id)
         Message.add(message.session, message.text, ticket_id, message.chat.id)
-        Message.add(message.session, "/ticket_add", None, message.chat.id)
         bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
 
     

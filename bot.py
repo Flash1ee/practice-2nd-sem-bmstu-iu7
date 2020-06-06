@@ -76,7 +76,6 @@ def active_ticket_list(message):
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif RoleNames(user.role_id).name == "CLIENT":
-        Message.add(message.session, "/ticket_list", None, message.chat.id)
         if not user.get_active_tickets(message.session):
             bot.send_message(message.chat.id, "У вас нет активных тикетов.")
         else:
@@ -155,7 +154,6 @@ def switch_for_client(message):
         if Ticket.get_by_id(message.session, message.text) == None:
             bot.send_message(message.chat.id, "Введен некоторектный ticket_id. Пожалуйста, попробуйте еще раз.")
         else:
-            Message.add(message.session, "/ticket_id", None, message.chat.id)
             bot.send_message(message.chat.id, "Тикет успешно выбран. В ближайшем времени с Вами свяжется менеджер.")
 def switch_for_superuser(message):
     chat_id = message.chat.id
@@ -194,7 +192,6 @@ def close_ticket(message):
         bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой "\
                          "/help, чтобы просмотреть список возможных команд.")
     else:
-        Message.add(message.session, "/ticket_close", None, message.chat.id)
         bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть. Для просмотра активных "\
                          "тикетов Вы можете воспользоваться командой /ticket_list.")
         bot.register_next_step_handler(message, ticket_close)
@@ -387,7 +384,6 @@ def get_ticket_body(message, ticket_id: int):
     user = message.user
     # Message.add(message.session, message.text, user.get_active_tickets(message.session)[-1].id, message.chat.id)
     Message.add(message.session, message.text, ticket_id, message.chat.id)
-    Message.add(message.session, "/ticket_add", None, message.chat.id)
     bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
 
     
