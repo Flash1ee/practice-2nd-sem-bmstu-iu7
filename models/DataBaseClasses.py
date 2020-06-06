@@ -105,25 +105,25 @@ class User(Base):
         session.commit()
 
     def get_all_tickets(self, session) -> list:
-        if self.role_id == RoleNames.ADMIN.value:
-            tickets = session.query(Ticket).all()
-        elif self.role_id == RoleNames.MANAGER.value:
-            tickets = session.query(Ticket).filter(
-                Ticket.manager_id == self.id).all()
+        
+        tickets = session.query(Ticket)
+
+        if self.role_id == RoleNames.MANAGER.value:
+            tickets = tickets.filter(Ticket.manager_id == self.id)
+
         elif self.role_id == RoleNames.CLIENT.value:
-            tickets = session.query(Ticket).filter(
-                Ticket.client_id == self.id).all()
-        return tickets
+            tickets = tickets.filter(Ticket.client_id == self.id)
+
+        print(f"\n[[AFTER QUERY GET_ALL_TICKETS: {len(tickets.all())}]]\n")
+
+        return tickets.all()
 
     def identify_ticket(self, session) -> int:
         last_message = session.query(Message).filter_by(
             sender_id=self.id).filter(Message.ticket_id).order_by(desc(Message.date)).first()
 
         if not last_message:
-            print("NOT LAST MESSAGE")
             return None
-
-        print("LAST MESSAGE")
 
         last_ticket_id = last_message.ticket_id
         return last_ticket_id
@@ -293,7 +293,6 @@ class Ticket(Base):
         for a in res:
             msg = session.query(Message).filter(Message.ticket_id != None).filter(
                 Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
-            print(type(msg))
             if msg.sender_id != manager_id and msg.ticket.manager_id == manager_id:
                 ticks.append(msg.ticket_id)
 
@@ -325,10 +324,10 @@ class Ticket(Base):
         return diff - timedelta(microseconds=diff.microseconds)
 
     @staticmethod
-    def get_all_messages(session, ticket_id: int, sender_id: int = None):
-        messages = session.query(Message).filter(Message.ticket_id == self.id).order_by(desc(Message.date))
+    def get_all_messages(session, ticket_id: int, sender_id: int = None) -> list:
+        messages = session.query(Message).filter(Message.ticket_id == ticket_id).order_by(desc(Message.date))
 
-        if conversation:
+        if sender_id:
             messages = messages.filter(Message.sender_id == sender_id)
 
         return messages.all()
@@ -381,8 +380,7 @@ class Ticket(Base):
         '''
         new_ticket = Ticket(title=title)
 
-        client = session.query(User).filter(
-            User.conversation == conversation).first()
+        client = session.query(User).filter(User.conversation == conversation).first()
         new_ticket.client_id = client.id
 
         manager = User._get_free_manager(session, [])
@@ -395,6 +393,8 @@ class Ticket(Base):
 
         session.add(new_ticket)
         session.commit()
+
+        print(f"//FROM TICKET.CREATE: {len(client.get_all_tickets(session))}//")
         return new_ticket
 
     @staticmethod
