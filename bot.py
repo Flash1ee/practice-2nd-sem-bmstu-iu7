@@ -71,7 +71,7 @@ def create_superuser(message):
 #Просмотр активных тикетов.
 @bot.message_handler(commands=["ticket_list"])
 def active_ticket_list(message):
-    user = message.user
+    user = User.find_by_conversation(message.session, message.chat.id)
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -451,7 +451,7 @@ def manager_answer(message):
         @bot.callback_query_handler(func=lambda callback: True)
         def caller_worker(callback):
             if callback.data == "Просмотр":
-                bot.register_next_step_handler(message, get_active_list)
+                bot.register_next_step_handler(message, active_ticket_list)
             if callback.data == "История":
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 bot.register_next_step_handler(message, chose_id)
