@@ -1,3 +1,7 @@
+"""
+    Контроллер общих функций бота 
+"""
+
 from models.DataBaseClasses import *
 def init(bot):
     @bot.message_handler(commands = ["help"])
@@ -46,9 +50,11 @@ def init(bot):
                 "Справка: будьте внимательны при соблюдении шаблона команды. В противном случае команда недействительна."
         bot.send_message(message.chat.id, commands)
     
-    #Обработка входа в систему.
     @bot.message_handler(commands = ["start"])
     def start(message):
+        """
+            Обработка входа в систему.
+        """
         username = message.chat.first_name
         chat_id = message.chat.id
         cur_role = None
