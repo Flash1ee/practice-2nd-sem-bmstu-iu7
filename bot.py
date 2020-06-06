@@ -369,8 +369,6 @@ def manager_answer(message):
         keyboard = types.InlineKeyboardMarkup()
         key_input = types.InlineKeyboardButton(text="Добавить сообщение в тикет", callback_data="Добавить")
         keyboard.add(key_input)
-        key_choose = types.InlineKeyboardButton(text="Посмотреть новые ответы", callback_data='Ответы')
-        keyboard.add(key_choose)
         key_show = types.InlineKeyboardButton(text="Просмотреть историю тикета", callback_data='Просмотр')
         keyboard.add(key_show)
         key_list = types.InlineKeyboardButton(text="Список моих тикетов", callback_data='Список')
@@ -386,8 +384,6 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 command = "add"
                 bot.register_next_step_handler(message, get_middle, command)
-            if callback.data == "Ответы:
-                bot.register_next_step_handler(message, new_reply)
             elif callback.data == "Список":
                 active_ticket_list(message)
             elif callback.data == "Создать":
@@ -398,11 +394,6 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 command = "history"
                 bot.register_next_step_handler(message, get_middle, command)
-        def new_reply(message):
-            ans = "Новые сообщения по Вашим тикетам:"
-            pass
-
-    
         def get_middle(message, command):
             ticket_id = message.text
             if not Ticket.get_by_id(message.session, ticket_id):
