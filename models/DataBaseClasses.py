@@ -149,6 +149,16 @@ class User(Base):
         return new_user
 
     @staticmethod
+    def get_messages(session, conversation: int) -> list:
+        '''
+            Возврашает все сообщения пользователя с chat_id == conversation
+            Сортировка: сначала новые.
+        '''
+        user = User.find_by_conversation(session, conversation)
+
+        return session.query(Message).filter(Message.sender_id == user.id).order_by(desc(Message.date)).all()
+
+    @staticmethod
     def get_all_users_with_role(session, role_id: int) -> list:
         '''param role_id: Role.(ADMIN/MANAGER/CLIENT/BLOCKED_USER).value 
         (В случае, если нет ни одного User, вернет пустой list)
@@ -314,8 +324,14 @@ class Ticket(Base):
 
         return diff - timedelta(microseconds=diff.microseconds)
 
-    def get_all_messages(self, session):
-        return session.query(Message).filter(Message.ticket_id == self.id).all()
+    @staticmethod
+    def get_all_messages(session, ticket_id: int, sender_id: int = None):
+        messages = session.query(Message).filter(Message.ticket_id == self.id).order_by(desc(Message.date))
+
+        if conversation:
+            messages = messages.filter(Message.sender_id == sender_id)
+
+        return messages.all()
 
     def put_refuse_data(self, session, reason):
         '''
@@ -414,20 +430,22 @@ class Message(Base):
     ticket = relationship('Ticket', back_populates='messages')
     sender = relationship('User', back_populates='messages')
 
-    @staticmethod
-    def get(session, ticket_id: int, user_id: int = None) -> list:
-        '''
-        Получить список всеx сообщений user_id в данном ticket_id
-        В случае, если user_id не передается, метод вернет сообщения 
-        обоих пользователей.
-        '''
-        messages = session.query(Message).filter(
-            Message.ticket_id == ticket_id).order_by(desc(Message.date))
+    # @staticmethod
+    # def get(session, user_id: int) -> list:
+    #     '''
+    #     Получить список всеx сообщений user_id в данном ticket_id
+    #     В случае, если user_id не передается, метод вернет сообщения 
+    #     обоих пользователей.
+    #     '''
 
-        if user_id:
-            messages = messages.filter(Message.sender_id == user_id)
+    #     return session.query()
+    #     messages = session.query(Message).filter(
+    #         Message.ticket_id == ticket_id).order_by(desc(Message.date))
 
-        return messages.all()
+    #     if user_id:
+    #         messages = messages.filter(Message.sender_id == user_id)
+
+    #     return messages.all()
 
     @staticmethod
     def add(session, body: str, ticket_id: int, sender_conversation: int) -> None:

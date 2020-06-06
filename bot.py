@@ -79,7 +79,7 @@ def active_ticket_list(message):
     user = User.find_by_conversation(message.session, message.chat.id)
     if user == None:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
-                         "системе. Воспользуйтесь командой /start или /superuser_init.")
+                         "системе.\nВоспользуйтесь командой /start или /superuser_init.")
     elif RoleNames(user.role_id).name == "CLIENT":
         if not user.get_all_tickets(message.session):
             bot.send_message(message.chat.id, "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
@@ -104,7 +104,7 @@ def active_ticket_list(message):
             if RoleNames(user.role_id).name == "ADMIN":
                 ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
-            messages = Message.get(message.session, ticket.id, ticket.client_id)
+            messsages = Ticket.get_all_messages(message.session, ticket_id, ticket.client_id)
             ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
         if ans == '':
@@ -171,13 +171,13 @@ def close_ticket(message):
     """
     if not message.user:
         bot.send_message(message.chat.id, "Для того, чтобы закрыть тикет, необходимо зарегистрироваться в " \
-                         "системе. Воспользуйтесь командой /start или /superuser_init.")
+                         "системе.\nВоспользуйтесь командой /start\nили /superuser_init.")
     elif message.user.role_id == RoleNames.MANAGER.value:
-        bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой "\
+        bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров.\n Воспользуйтесь командой "\
                          "/help, чтобы просмотреть список возможных команд.")
     else:
-        bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть. Для просмотра активных "\
-                         "тикетов Вы можете воспользоваться командой /ticket_list.")
+        bot.send_message(message.chat.id, "Введите номер тикета, которвый Вы хотите закрыть.\nДля просмотра активных "\
+                         "тикетов\nВы можете воспользоваться командой\n /ticket_list.")
         bot.register_next_step_handler(message, ticket_close)
 def ticket_close(message):
     """
@@ -193,7 +193,7 @@ def ticket_close(message):
         bot.send_message(message.chat.id, "Тикет уже закрыт.")
     else:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
-    ticket.close(message.session)
+        ticket.close(message.session)
 
 
 @bot.message_handler(commands=["manager_create"])
@@ -353,7 +353,9 @@ def ticket_refuse(message):
     args = message.text.split()
     user = message.user
     chat = message.chat.id
-    if len(args) != 2:
+    if not user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
+    elif len(args) != 2:
         bot.send_message(
             chat, "Неверное использование команды. Шаблон: /ticket_refuse <ticket id>")
     elif user.role_id != RoleNames.MANAGER.value:
@@ -409,6 +411,9 @@ def manager_answer(message):
     """
         ответ менеджера на тикет
     """
+    if not message.user:
+        bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
+        return
     user_role = message.user.role_id
     if user_role == RoleNames.CLIENT.value:
         keyboard = types.InlineKeyboardMarkup()
@@ -442,16 +447,12 @@ def manager_answer(message):
         def get_middle(message, command):
             ticket_id = message.text
             ticket = Ticket.get_by_id(message.session, ticket_id)
-            if not ticket:
+            if not ticket or ticket.client_id != message.chat.id:
                 bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
             else:
                 if command == "add":
-                    if ticket.client_id != message.chat.id:
-                        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
-                                         "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
-                    else:
-                        bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
-                        bot.register_next_step_handler(message, get_updates, ticket_id)
+                    bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
+                    bot.register_next_step_handler(message, get_updates, ticket_id)
                 elif command == "history":
                     ticket = Ticket.get_by_id(message.session, ticket_id)
                     ans = "Информация для ticket_id " + str(ticket.id) + ":\n\n"
@@ -462,7 +463,7 @@ def manager_answer(message):
                     else:
                         ans += "Close date: " + str(ticket.close_date) + '\n\n'
                     ans += "История переписки:\n\n"
-                    messages = ticket.get_all_messages(message.session)
+                    messages = Ticket.get_all_messages(message.session, ticket.id)
                     for msg in messages:
                         ans += str(msg.date) + "\n"
                         role = User.find_by_id(message.session, msg.sender_id).role_id
@@ -479,7 +480,6 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен менеджеру, ожидайте.")
             else:
                 bot.send_message(message.chat.id, "Чтобы задать вопрос, воспользуйтесь командой /ticket_add.")
-
 
     elif user_role == RoleNames.MANAGER.value:
         keyboard = types.InlineKeyboardMarkup()
@@ -514,9 +514,10 @@ def chose_id(message):
     ticket_id = message.text
     ticket = Ticket.get_by_id(message.session, ticket_id)
     chat_id = message.chat.id
-    msg = message.session.query(Message).filter(Message.sender_id == ticket.client_id).order_by(desc(Message.date))
-    if not msg:
-        bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено\n")
+    user = User.find_by_conversation(message.session, message.chat.id)
+    msg = user.get_all_messages(message.session)
+    if not ticket or ticket.client_id != message.chat.id:
+        bot.send_message(message.chat.id, f"Тикета с номером {ticket_id} не найдено.\n")
     else:
         ans = ''
         if msg.count() > 10:
@@ -534,11 +535,8 @@ def chose_id(message):
 def get_reply_id(message):
     ticket_id = message.text
     ticket = Ticket.get_by_id(message.session, ticket_id)
-    if not ticket:
+    if not ticket or ticket.client_id != message.chat.id:
         bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
-    elif ticket.client_id != message.chat.id:
-        bot.send_message(message.chat.id, "Введен некорректный номер тикета. "\
-                         "Для просмотра тикетов воспользуйтесь кнопкой 'Список моих тикетов'.")
     else:
         bot.send_message(message.chat.id, "Введите Ваш ответ:")
         @bot.middleware_handler(update_types=['message'])
@@ -548,7 +546,7 @@ def get_reply_id(message):
 
 def get_refuse_id(message):
     ticket_id = message.text
-    if not Message.get(message.session,ticket_id):
+    if not Ticket.get_all_messages(message.session, ticket_id):
         bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
     else:
         user = User.find_by_conversation(message.session, message.chat.id)

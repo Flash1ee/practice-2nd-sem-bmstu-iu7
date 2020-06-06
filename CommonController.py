@@ -1,5 +1,4 @@
 from models.DataBaseClasses import *
-
 def init(bot):
     @bot.message_handler(commands = ["help"])
     def help(message):
@@ -7,6 +6,9 @@ def init(bot):
             Вывод сообщения помощи
         """
         user = message.user
+        if not user:
+            bot.send_message(message.chat.id, "Перед использованием /help нужно зарегистрироваться.")
+            return
         commands = "Привет! Вам доступны следующие комманды:\n\n"
         commands += "/help - Вызов данного сообщения.\n\n"
         commands += "/start - вход в систему\n\n"
@@ -17,7 +19,7 @@ def init(bot):
                 "/ticket_list - Посмотреть список активных тикетов и краткую информацию по ним.\n\n"\
                 "/ticket_close - Закрыть тикет в случае, когда Ваша проблема решена.\n\n"\
                 "Что такое тикет?\n Тикет - это идентификационный номер Вашего вопроса, с помощью которого приложение будет с ним работать."
-        if RoleNames(user.role_id).name == "MANAGER":
+        elif RoleNames(user.role_id).name == "MANAGER":
             commands += "/superuser init <TOKEN> - регистрация в системе по идентификационному номеру(токену). Чтобы получить "\
                 "токен, обратитесь к администратору приложения.\n\n"\
                 "/manager_init <TOKEN> - Регистрация в системе.\n\n"\
@@ -28,7 +30,7 @@ def init(bot):
                 "/ticket_refuse <ticket_id> <reason> - Отказ от тикета. Внимание: необходимо соблюдать форму шаблона команды, в которой "\
                 "<ticket_id> - id тикета, от которого Вы отказываетесь, <reason> - соответственно причина отказа.\n\n"\
                 "Справка: будьте внимательны при соблюдении шаблона команды. В противном случае команда недействительна."
-        if RoleNames(user.role_id).name == "ADMIN":
+        elif RoleNames(user.role_id).name == "ADMIN":
             commands += "/superuser_init <TOKEN> - регистрация в системе по идентификационному номеру(токену). Чтобы получить "\
                 "токен, обратитесь к администратору приложения.\n\n"\
                 "/manager_list - Просмотр списка менеджеров.\n\n"\
