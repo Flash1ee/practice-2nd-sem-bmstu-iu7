@@ -294,7 +294,8 @@ class Ticket(Base):
 
     def get_wait_time(self, session) -> 'Timedelta or None':
         '''
-            Возвращает wait_time текущего тикета
+            Возвращает wait_time текущего тикета или None, если
+            последнее сообщение в тикете было от менеджера
         '''
         last_manager_message = session.query(Message).filter(
             Message.ticket_id == self.id, Message.sender_id == self.manager_id).order_by(desc(Message.date)).first()
