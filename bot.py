@@ -76,11 +76,11 @@ def active_ticket_list(message):
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                          "системе. Воспользуйтесь командой /start или /superuser_init.")
     elif RoleNames(user.role_id).name == "CLIENT":
-        if not user.get_active_tickets(message.session):
-            bot.send_message(message.chat.id, "У вас нет активных тикетов.")
+        if not user.get_all_tickets(message.session):
+            bot.send_message(message.chat.id, "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
         else:
             ans = ''
-            for ticket in user.get_active_tickets(message.session):
+            for ticket in user.get_all_tickets(message.session):
                 ans += 'Ticket id: ' + str(ticket.id) + '\n'
                 ans += 'Title: ' + ticket.title + '\n'
                 ans += "Start data: " + str(ticket.start_date) + '\n\n'
