@@ -463,7 +463,9 @@ def write_message(message):
     else:
         ticket = Ticket.get_by_id(message.session, ticket_id)
 
-        if ticket and ticket.client_id == user.id:
+        if not message.session.query(BlockedTicket).get(ticket_id):
+            bot.send_message(message.chat.id, "Извините, но этот тикет закрыт.")
+        elif ticket and ticket.client_id == user.id:
             bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
             bot.register_next_step_handler(message, append_message, ticket_id)
         else:
