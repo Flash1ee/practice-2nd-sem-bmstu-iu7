@@ -70,6 +70,7 @@ def create_ticket(message):
     else:
         if user.role_id != RoleNames.CLIENT.value:
             bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
+            manager_answer(message)
         else:    
             bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
             bot.register_next_step_handler(message, get_title)
@@ -78,6 +79,10 @@ def get_title(message):
         Получение заголовка тикета
     """
     user = message.user
+    if message.text == "Назад":
+        bot.send_message(message.chat.id, "Отмена операции...")
+        manager_answer(message)
+        return
     new_ticket = Ticket.create(message.session, message.text, message.chat.id)
     if not new_ticket:
         bot.send_message(message.chat.id, user.name + ", извините, в системе нет ни одного менеджера. Пожалуйста, обратитесь спустя пару минут.")
@@ -279,6 +284,10 @@ def ticket_close(message):
     """
         Обработка закрытия тикета
     """
+    if message.text == "Назад":
+        bot.send_message(message.chat.id, "Возвращаемся...")
+        manager_answer(message)
+        return
     ticket = Ticket.get_by_id(message.session, message.text)
     if not ticket or User.find_by_conversation(message.session, message.chat.id).id != ticket.client_id:
         bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Команда прервана.\nПовторите попытку.")
@@ -503,21 +512,27 @@ def append_message(message, ticket_id):
 def worker(message):
     if message.user.role_id == RoleNames.CLIENT.value:
         if str(message.text) == "Добавить сообщение в тикет":
-            bot.send_message(message.chat.id, "Для отмена операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Для отмены операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_back())
             bot.register_next_step_handler(message, write_message)
+
         elif str(message.text) == "Создать тикет":
-            bot.send_message(message.chat.id, "Секундочку....", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Для отмены операции можете воспользоваться кнопкой \"Назад\"", reply_markup = keyboard_back())
             create_ticket(message)
+
         elif str(message.text) == "Список моих тикетов":
             bot.send_message(message.chat.id, "Хорошо, вывожу.", reply_markup=types.ReplyKeyboardRemove())
             active_ticket_list(message)
+
         elif str(message.text) == "Посмотреть историю тикета":
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Для отмены операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_back())
             bot.register_next_step_handler(message, history)
+
         elif str(message.text) == "Закрыть тикет":
-            bot.send_message(message.chat.id, "Секундочку...", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Секундочку...", reply_markup=keyboard_back())
             close_ticket(message)
+
         elif str(message.text) == "Закрыть клавиатуру":
             bot.send_message(message.chat.id, "Закрываем клавиатуру...", reply_markup=types.ReplyKeyboardRemove())
             return
@@ -529,15 +544,19 @@ def worker(message):
         if str(message.text) == "Просмотреть историю сообщений тикета":
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
             bot.register_next_step_handler(message, history)
+
         elif str(message.text) == "Посмотреть активные тикеты":
             bot.send_message(message.chat.id, "Вывожу список активных тикетов\nСекундочку...", reply_markup=types.ReplyKeyboardRemove())
             active_ticket_list(message)
+
         elif str(message.text) == "Выбрать тикет для ответа":
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
             bot.register_next_step_handler(message, get_reply_id)
+
         elif str(message.text) == "Отказаться от тикета":
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
             bot.register_next_step_handler(message, get_refuse_id)
+
         elif str(message.text) == "Закрыть клавиатуру":
             bot.send_message(message.chat.id, "Закрываем клавиатуру...", reply_markup=types.ReplyKeyboardRemove())
             return
@@ -572,8 +591,12 @@ def history(message):
     try:
         ticket_id = int(ticket_id)
     except:
-        bot.send_message(message.chat.id, "Некорректный номер тикета.")
+        if ticket_id == "Назад":
+            bot.send_message(message.chat.id, "Возвращаемся...", reply_markup = types.ReplyKeyboardRemove())
+        else:
+            bot.send_message(message.chat.id, "Некорректный номер тикета.")
         manager_answer(message)
+        return
     else:
         ticket = Ticket.get_by_id(message.session, ticket_id)
         user_id = User.find_by_conversation(message.session, chat_id).id
@@ -582,6 +605,8 @@ def history(message):
 
         if not (ticket and user_id in (ticket.client_id, ticket.manager_id)):
             bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найдено.\n")
+            manager_answer(message)
+            return
         else:
             ans = "История последних сообщений:\n\n"
             if len(messages) > 10:
