@@ -512,6 +512,7 @@ def worker(message):
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
             bot.register_next_step_handler(message, history)
         elif str(message.text) == "Посмотреть активные тикеты":
+            bot.send_message(message.chat.id, "Вывожу список активных тикетов\nСекундочку...", reply_markup=types.ReplyKeyboardRemove())
             active_ticket_list(message)
         elif str(message.text) == "Выбрать тикет для ответа":
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
