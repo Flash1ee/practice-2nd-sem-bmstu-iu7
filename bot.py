@@ -122,9 +122,18 @@ def create_superuser(message):
 def active_ticket_list(message):
     user = message.user
     if user:
-        ans = "Список тикетов:\n\n"
         all_tickets = user.get_all_tickets(message.session)
+        if len(all_tickets) == 0:
+            if RoleNames(user.role_id).name == 'CLIENT':
+                bot.send_message(message.chat.id,
+                                "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
+            else:
+                bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
+        elif all_tickets:
+            bot.send_message(message.chat.id, "Список тикетов:\n\n")
+
         for ticket in all_tickets:
+            ans = ''
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n'
             ans += "Start date: " + str(ticket.start_date) + '\n'
@@ -145,19 +154,6 @@ def active_ticket_list(message):
                 else:
                     ans += 'Тикет активен. \n'
             bot.send_message(message.chat.id, ans)
-            ans = ''
-            
-        if ans == "Список тикетов:\n\n":
-            bot.send_message(message.chat.id, "Тикеты отсутствуют.")
-
-        if all_tickets:
-            bot.send_message(message.chat.id, "Список тикетов:\n\n" + ans)
-
-        elif RoleNames(user.role_id).name == 'CLIENT':
-            bot.send_message(message.chat.id,
-                             "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
-        else:
-            bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
     else:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                                           "системе. Воспользуйтесь командой /start или /superuser_init.")
