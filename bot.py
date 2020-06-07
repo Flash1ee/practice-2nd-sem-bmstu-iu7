@@ -130,7 +130,7 @@ def active_ticket_list(message):
         if not all_tickets:
             if RoleNames(user.role_id).name == 'CLIENT':
                 bot.send_message(message.chat.id,
-                                 "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
+                                "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
             else:
                 bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
     else:
