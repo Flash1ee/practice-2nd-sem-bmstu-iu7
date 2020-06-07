@@ -513,6 +513,22 @@ def append_message(message, ticket_id):
 
 
 def worker(message):
+    def keyboard_tickets():
+        session = message.session
+        user = User.find_by_conversation(session, message.chat.id)
+        if RoleNames(user.role_id).name in ('CLIENT', "ADMIN"):
+            tickets = user.get_all_tickets(session)
+            tickets = sorted(tickets,
+                                    key=lambda x: x.close_date if x.close_date else datetime(year=2020, month=1, day=1))
+        else:
+            tickets = user.get_active_tickets(session)
+            tickets = sorted(tickets, key=lambda w: w.get_wait_time(session), reverse=True)
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        for ticket in tickets:
+            key = types.KeyboardButton(f"{ticket.id}: {ticket.title}")
+            markup.add(key)
+        markup.add(types.KeyboardButton("Отмена"))        
+        return markup
     if message.user.role_id == RoleNames.CLIENT.value:
         if str(message.text) == "Добавить сообщение в тикет":
             bot.send_message(message.chat.id, "Для отмена операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
@@ -525,7 +541,7 @@ def worker(message):
             bot.send_message(message.chat.id, "Хорошо, вывожу.", reply_markup=types.ReplyKeyboardRemove())
             active_ticket_list(message)
         elif str(message.text) == "Посмотреть историю тикета":
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_tickets())
             bot.register_next_step_handler(message, history)
         elif str(message.text) == "Закрыть тикет":
             bot.send_message(message.chat.id, "Секундочку...", reply_markup=types.ReplyKeyboardRemove())
@@ -539,7 +555,7 @@ def worker(message):
 
     elif message.user.role_id == RoleNames.MANAGER.value:
         if str(message.text) == "Просмотреть историю сообщений тикета":
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_tickets())
             bot.register_next_step_handler(message, history)
         elif str(message.text) == "Посмотреть активные тикеты":
             bot.send_message(message.chat.id, "Вывожу список активных тикетов\nСекундочку...", reply_markup=types.ReplyKeyboardRemove())
@@ -579,7 +595,7 @@ def history(message):
     """
         История тикета
     """
-    ticket_id = message.text
+    ticket_id = message.text.split(":")[0]
     chat_id = message.chat.id
     try:
         ticket_id = int(ticket_id)
