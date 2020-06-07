@@ -508,10 +508,11 @@ def worker(message):
             return
 
     elif message.user.role_id == RoleNames.MANAGER.value:
-        if str(message.text) == "Посмотреть историю сообщений тикета":
+        if str(message.text) == "Просмотреть историю сообщений тикета":
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
             bot.register_next_step_handler(message, history)
         elif str(message.text) == "Посмотреть активные тикеты":
+            bot.send_message(message.chat.id, "Вывожу список активных тикетов\nСекундочку...", reply_markup=types.ReplyKeyboardRemove())
             active_ticket_list(message)
         elif str(message.text) == "Выбрать тикет для ответа":
             bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
@@ -646,7 +647,7 @@ def get_reply(message, ticket_id):
 
 def keyboard_manager():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    key_history = types.KeyboardButton('Посмотреть историю сообщений тикета')
+    key_history = types.KeyboardButton("Просмотреть историю сообщений тикета")
     markup.add(key_history)
     key_reply = types.InlineKeyboardButton("Выбрать тикет для ответа")
     markup.add(key_reply)
