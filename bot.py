@@ -154,7 +154,7 @@ def send_active_ticket_list_paginator(message, page=1):
     step = 3
     if all_tickets:
         paginator = InlineKeyboardPaginator(
-            len(all_tickets) // step + 1,
+            (len(all_tickets) - 1)// step + 1,
             current_page=page,
             data_pattern='active_ticket#{page}'
         )
