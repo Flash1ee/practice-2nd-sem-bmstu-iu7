@@ -662,7 +662,7 @@ def get_reply(message, ticket_id):
 
 def keyboard_manager():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    key_history = types.KeyboardButton('Просмотреть историю сообщений тикета')
+    key_history = types.KeyboardButton("Просмотреть историю сообщений тикета")
     markup.add(key_history)
     key_reply = types.InlineKeyboardButton("Выбрать тикет для ответа")
     markup.add(key_reply)
@@ -680,7 +680,7 @@ def keyboard_client():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     key_input = types.KeyboardButton("Добавить сообщение в тикет")
     markup.add(key_input)
-    key_show = types.KeyboardButton("Просмотреть историю тикета")
+    key_show = types.KeyboardButton("Посмотреть историю тикета")
     markup.add(key_show)
     key_list = types.KeyboardButton("Список моих тикетов")
     markup.add(key_list)
