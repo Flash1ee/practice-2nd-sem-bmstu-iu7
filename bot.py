@@ -755,6 +755,29 @@ def manager_answer(message):
         bot.send_message(message.chat.id, "Что Вы хотите сделать?", reply_markup=keyboard_manager())
         bot.register_next_step_handler(message, worker)
 
+if cfg['debug']:
+    """
+        Методы для тестирования
+    """
+    @bot.message_handler(commands=["debug"])
+    def debug_info(message):
+        bot.send_message(message.chat.id, "DEBUG")
+    @bot.message_handler(commands=["debug_set_role_client"])
+    def debug_set_role_client(message):
+        User.find_by_conversation(message.session, message.chat.id).role_id = RoleNames.CLIENT.value
+        message.session.commit()
+        bot.send_message(message.chat.id, 'OK')
+    
+    @bot.message_handler(commands=["debug_set_role_manager"])
+    def debug_set_role_manager(message):
+        User.find_by_conversation(message.session, message.chat.id).role_id = RoleNames.MANAGER.value
+        message.session.commit()
+        bot.send_message(message.chat.id, 'OK')
+    @bot.message_handler(commands=["debug_set_role_admin"])
+    def debug_set_role_admin(message):
+        User.find_by_conversation(message.session, message.chat.id).role_id = RoleNames.ADMIN.value
+        message.session.commit()
+        bot.send_message(message.chat.id, 'OK')
 
 
 @bot.middleware_handler(update_types=['message'])
