@@ -315,7 +315,7 @@ class Ticket(Base):
                 Message.ticket_id == self.id, Message.sender_id == self.client_id, Message.date > last_manager_message.date).order_by(asc(Message.date)).first()
 
         if not first_client_message:
-            return None 
+            return timedelta(microseconds=0)
         
         diff = datetime.now() - first_client_message.date
 
