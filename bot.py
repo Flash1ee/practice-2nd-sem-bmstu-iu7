@@ -484,7 +484,7 @@ def ticket_refuse(message):
 
 
 def write_message(message):
-    ticket_id = message.text
+    ticket_id = message.text.split(":")[0]
     user = message.user
     try:
         ticket_id = int(ticket_id)
@@ -493,7 +493,7 @@ def write_message(message):
             bot.send_message(message.chat.id, "Возвращаемся...", reply_markup = types.ReplyKeyboardRemove())
         else:
             bot.send_message(message.chat.id, "Некорректный номер тикета.")
-        manager_answer(message)
+        message_answer(message)
     else:
         ticket = Ticket.get_by_id(message.session, ticket_id)
 
@@ -504,7 +504,7 @@ def write_message(message):
             bot.register_next_step_handler(message, append_message, ticket_id)
         else:
             bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
-        manager_answer(message)
+            message_answer(message)
 
 
 def append_message(message, ticket_id):
@@ -529,10 +529,18 @@ def worker(message):
             markup.add(key)
         markup.add(types.KeyboardButton("Отмена"))        
         return markup
+    def keyboard_active_tickets():
+        tickets = message.user.get_active_tickets(message.session)
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        for ticket in tickets:
+            key = types.KeyboardButton(f"{ticket.id}: {ticket.title}")
+            markup.add(key)
+        markup.add(types.KeyboardButton("Назад"))        
+        return markup
     if message.user.role_id == RoleNames.CLIENT.value:
         if str(message.text) == "Добавить сообщение в тикет":
             bot.send_message(message.chat.id, "Для отмена операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_back())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_active_tickets())
             bot.register_next_step_handler(message, write_message)
         elif str(message.text) == "Создать тикет":
             bot.send_message(message.chat.id, "Секундочку....", reply_markup=types.ReplyKeyboardRemove())
@@ -600,7 +608,7 @@ def history(message):
     try:
         ticket_id = int(ticket_id)
     except:
-        bot.send_message(message.chat.id, "Некорректный номер тикета.")
+        bot.send_message(message.chat.id, "Некорректный номер тикета.", reply_markup=types.ReplyKeyboardRemove())
         manager_answer(message)
     else:
         ticket = Ticket.get_by_id(message.session, ticket_id)
@@ -609,7 +617,7 @@ def history(message):
         messages.reverse()
 
         if not (ticket and user_id in (ticket.client_id, ticket.manager_id)):
-            bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найдено.\n")
+            bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найдено.\n", reply_markup=types.ReplyKeyboardRemove())
         else:
             ans = "История последних сообщений:\n\n"
             if len(messages) > 10:
@@ -618,11 +626,11 @@ def history(message):
                 ans += RoleNames(User.find_by_id(message.session, m.sender_id).role_id).name + '\n'
                 ans += "Дата: " + str(m.date) + "\n"
                 ans += "Сообщение: " + m.body + "\n"
-                bot.send_message(chat_id, ans)
+                bot.send_message(chat_id, ans, reply_markup=types.ReplyKeyboardRemove())
                 ans = ''
 
             if not messages:
-                bot.send_message(chat_id, "История сообщений пустая.")
+                bot.send_message(chat_id, "История сообщений пустая.", reply_markup=types.ReplyKeyboardRemove())
 
 
 def get_reply_id(message):
