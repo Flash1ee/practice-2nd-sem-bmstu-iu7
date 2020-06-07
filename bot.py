@@ -9,6 +9,7 @@ from telebot import types
 
 import ClientController
 import CommonController
+import ManagerController
 from db import Session
 from models.DataBaseClasses import *
 
@@ -17,7 +18,7 @@ token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
 if 'proxy' in cfg.keys():
-    apihelper.proxy = cfg['proxy_3']
+    apihelper.proxy = cfg['proxy']
 
 apihelper.ENABLE_MIDDLEWARE = True
 
@@ -53,6 +54,7 @@ def set_empty_text_middleware(bot_instance, message):
 
 CommonController.init(bot)
 ClientController.init(bot)
+ManagerController.init(bot)
 
 
 @bot.message_handler(commands = ["ticket_add"])
@@ -463,8 +465,8 @@ def write_message(message):
     else:
         ticket = Ticket.get_by_id(message.session, ticket_id)
 
-        if not message.session.query(BlockedTicket).get(ticket_id):
-            bot.send_message(message.chat.id, "Извините, но этот тикет закрыт.")
+        if message.session.query(BlockedTicket).get(ticket_id):
+            bot.send_message(message.chat.id, "Извините, тикет уже закрыт.")
         elif ticket and ticket.client_id == user.id:
             bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
             bot.register_next_step_handler(message, append_message, ticket_id)
@@ -638,6 +640,33 @@ def get_reply(message, ticket_id):
     bot.send_message(client_convers, f"Вам ответил менеджер. Ticket #{curr_ticket.id}")
     bot.send_message(message.chat.id, "Ответ отправлен.")
 
+@bot.message_handler(commands=["message"])
+def manager_answer(message):
+    """
+        ответ менеджера на тикет
+    """
+    user_role = message.user.role_id
+
+    if user_role == RoleNames.CLIENT.value:
+        bot.send_message(message.chat.id, "Что вы хотите сделать?", reply_markup=keyboard_client())
+        bot.register_next_step_handler(message, worker)
+
+    elif user_role == RoleNames.MANAGER.value:
+        bot.send_message(message.chat.id, "Что Вы хотите сделать?", reply_markup=keyboard_manager())
+        bot.register_next_step_handler(message, worker)
+
+    def keyboard_manager():
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        key_history = types.KeyboardButton("Просмотреть историю сообщений тикета")
+        markup.add(key_history)
+        key_reply = types.InlineKeyboardButton("Выбрать тикет для ответа")
+        markup.add(key_reply)
+        key_show = types.InlineKeyboardButton("Посмотреть активные тикеты")
+        markup.add(key_show)
+        key_refuse = types.InlineKeyboardButton("Отказаться от тикета")
+        markup.add(key_refuse)
+        key_cancel = types.InlineKeyboardButton("Закрыть клавиатуру")
+        markup.add(key_cancel)
 
 def keyboard_manager():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
