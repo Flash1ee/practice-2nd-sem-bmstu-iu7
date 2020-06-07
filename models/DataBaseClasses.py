@@ -250,8 +250,6 @@ class Ticket(Base):
     messages = relationship(
         'Message', order_by='Message.ticket_id', back_populates='ticket')
 
-    # TODO UNTESTED
-
     @staticmethod
     def get_closed_tickets_by_time(session, manager_id, days: int) -> list:
         curr_date = datetime.now()
@@ -261,7 +259,6 @@ class Ticket(Base):
         return session.query(Ticket).filter(Ticket.manager_id == manager_id).filter(
             Ticket.close_date > key_date).all()
 
-    # TODO UNTESTED
     @staticmethod
     def get_blocked_tickets_by_time(session, manager_id, days: int) -> list:
         curr_date = datetime.now()
@@ -271,31 +268,18 @@ class Ticket(Base):
         return session.query(BlockedTicket).filter(BlockedTicket.manager_id == manager_id).filter(
             BlockedTicket.date > key_date).all()
 
-    # TODO
-    # https://stackoverflow.com/questions/45775724/sqlalchemy-group-by-and-return-max-date
-    # http://old.code.mu/sql/group-by.html
-    # http://quabr.com:8182/58620448/sqlalchemy-how-to-use-group-by-correctly-only-full-group-by
-    # https://stackoverflow.com/questions/34115174/error-related-to-only-full-group-by-when-executing-a-query-in-mysql
     @staticmethod
     def get_unprocessed_tickets(session, manager_id) -> list:
-        #joined = session.query(Message).join(Ticket.messages)
-        #print(joined[1].id, joined[1].ticket_id, joined[1].date, joined[1].sender_id, joined[1].body)
-        #print(joined[1].ticket.id, joined[1].ticket.client_id, joined[1].ticket.manager_id, joined[1].ticket.title, joined[1].ticket.start_date)
-        #message = session.query(Message).filter(Message.id == 7)[0]
-        #print(message.ticket.id, message.ticket.client_id, message.ticket.manager_id, message.ticket.title, message.ticket.start_date)
-        # print(message.ticket.manager_id)
 
         res = session.query(Message.ticket_id, func.max(Message.date)).filter(
             Message.ticket_id != None).group_by(Message.ticket_id).all()
         ticks = []
+
         for a in res:
             msg = session.query(Message).filter(Message.ticket_id != None).filter(
                 Message.ticket_id == a[0]).filter(Message.date == a[1])[0]
             if msg.sender_id != manager_id and msg.ticket.manager_id == manager_id:
                 ticks.append(msg.ticket_id)
-
-        # all_open_tickets = joined.filter(Ticket.close_date.is_(None)).filter(
-        #    Ticket.manager_id == manager_id)
 
         return ticks
 
@@ -341,7 +325,6 @@ class Ticket(Base):
         session.add(new_blocked)
         session.commit()
 
-    # UNTESTED
     def reappoint(self, session):
         '''
             Метод получает список менеджеров, уже отказавшихся от данного тикета,
@@ -368,7 +351,6 @@ class Ticket(Base):
         self.close_date = datetime.now()
         session.commit()
 
-    # TODO: UNTESTED
     @staticmethod
     def create(session, title: str, conversation: str) -> 'Ticket or None':
         '''
