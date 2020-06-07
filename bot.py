@@ -146,18 +146,13 @@ def active_ticket_list(message):
                     ans += 'Тикет активен. \n'
             bot.send_message(message.chat.id, ans)
             ans = ''
-            
-        if ans == "Список тикетов:\n\n":
-            bot.send_message(message.chat.id, "Тикеты отсутствуют.")
 
-        #if all_tickets:
-            #bot.send_message(message.chat.id, "Список тикетов:\n\n" + ans)
-
-        elif RoleNames(user.role_id).name == 'CLIENT':
-            bot.send_message(message.chat.id,
-                             "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
-        else:
-            bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
+        if not all_tickets:
+            if RoleNames(user.role_id).name == 'CLIENT':
+                bot.send_message(message.chat.id,
+                                 "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
+            else:
+                bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
     else:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
                                           "системе. Воспользуйтесь командой /start или /superuser_init.")
