@@ -150,8 +150,8 @@ def active_ticket_list(message):
         if ans == "Список тикетов:\n\n":
             bot.send_message(message.chat.id, "Тикеты отсутствуют.")
 
-        if all_tickets:
-            bot.send_message(message.chat.id, "Список тикетов:\n\n" + ans)
+        #if all_tickets:
+            #bot.send_message(message.chat.id, "Список тикетов:\n\n" + ans)
 
         elif RoleNames(user.role_id).name == 'CLIENT':
             bot.send_message(message.chat.id,
