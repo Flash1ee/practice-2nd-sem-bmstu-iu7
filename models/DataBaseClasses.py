@@ -114,8 +114,6 @@ class User(Base):
         elif self.role_id == RoleNames.CLIENT.value:
             tickets = tickets.filter(Ticket.client_id == self.id)
 
-        print(f"\n[[AFTER QUERY GET_ALL_TICKETS: {len(tickets.all())}]]\n")
-
         return tickets.all()
 
     def identify_ticket(self, session) -> int:
