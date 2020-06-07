@@ -152,41 +152,49 @@ def send_active_ticket_list_paginator(message, page=1):
         all_tickets = user.get_active_tickets(session)
         all_tickets = sorted(all_tickets, key=lambda w: w.get_wait_time(session), reverse=True)
     step = 3
-    paginator = InlineKeyboardPaginator(
-        len(all_tickets) // step + 1,
-        current_page=page,
-        data_pattern='active_ticket#{page}'
-    )
-    for i in range((page-1)*step + 1, page*step + 1):
-        if i <= len(all_tickets):
-            ticket = all_tickets[i - 1]
-            ans += 'Ticket id: ' + str(ticket.id) + '\n'
-            ans += 'Title: ' + ticket.title + '\n'
-            ans += "Start date: " + str(ticket.start_date) + '\n'
+    if all_tickets:
+        paginator = InlineKeyboardPaginator(
+            len(all_tickets) // step + 1,
+            current_page=page,
+            data_pattern='active_ticket#{page}'
+        )
+        for i in range((page-1)*step + 1, page*step + 1):
+            if i <= len(all_tickets):
+                ticket = all_tickets[i - 1]
+                ans += 'Ticket id: ' + str(ticket.id) + '\n'
+                ans += 'Title: ' + ticket.title + '\n'
+                ans += "Start date: " + str(ticket.start_date) + '\n'
 
-            if RoleNames(user.role_id).name == "ADMIN":
-                ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
-                ans += "Client_id: " + str(ticket.client_id) + '\n'
-                ans += "Wait time: " + str(ticket.get_wait_time(session)) + "\n"
+                if RoleNames(user.role_id).name == "ADMIN":
+                    ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
+                    ans += "Client_id: " + str(ticket.client_id) + '\n'
+                    ans += "Wait time: " + str(ticket.get_wait_time(session)) + "\n"
 
-            if RoleNames(user.role_id).name == "MANAGER":
-                ans += "Client_id: " + str(ticket.client_id) + '\n'
-                ans += "Wait time: " + str(ticket.get_wait_time(session)) + "\n"
+                if RoleNames(user.role_id).name == "MANAGER":
+                    ans += "Client_id: " + str(ticket.client_id) + '\n'
+                    ans += "Wait time: " + str(ticket.get_wait_time(session)) + "\n"
 
-            if RoleNames(user.role_id).name in ('CLIENT', "ADMIN"):
-                ans += 'Status: '
-                if ticket.close_date:
-                    ans += "Тикет закрыт.\nClose date: " + str(ticket.close_date) + '\n'
-                else:
-                    ans += 'Тикет активен. \n'
-            ans += '=' * 10 + '\n'
+                if RoleNames(user.role_id).name in ('CLIENT', "ADMIN"):
+                    ans += 'Status: '
+                    if ticket.close_date:
+                        ans += "Тикет закрыт.\nClose date: " + str(ticket.close_date) + '\n'
+                    else:
+                        ans += 'Тикет активен. \n'
+                ans += '=' * 10 + '\n'
 
-    ans = f'Тикеты {(page-1)*step + 1} - {min(page*step + 1, len(all_tickets))}\n\n' + '=' * 10 + '\n' + ans
-    bot.send_message(
-        message.chat.id,
-        ans,
-        reply_markup=paginator.markup
-    )
+        ans = f'Тикеты {(page-1)*step + 1} - {min(page*step + 1, len(all_tickets))}\n\n' + '=' * 10 + '\n' + ans
+        bot.send_message(
+            message.chat.id,
+            ans,
+            reply_markup=paginator.markup
+        )
+    else:
+        if RoleNames(user.role_id).name == 'CLIENT':
+            bot.send_message(message.chat.id,
+                "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
+        else:
+            bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
+
     session.close()
 
 @bot.message_handler(commands=["ticket_id"])
