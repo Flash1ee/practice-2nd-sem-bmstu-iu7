@@ -235,7 +235,7 @@ def ticket_close(message):
                          "обратитесь к менеджеру.")
     elif ticket.close_date:
         bot.send_message(message.chat.id, "Тикет уже закрыт.")
-    elif:
+    else:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
         ticket.close(message.session)
 
