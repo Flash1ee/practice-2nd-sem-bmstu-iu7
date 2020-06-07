@@ -182,7 +182,7 @@ def send_active_ticket_list_paginator(message, page=1):
                         ans += 'Тикет активен. \n'
                 ans += '=' * 10 + '\n'
 
-        ans = f'Тикеты {(page-1)*step + 1} - {min(page*step + 1, len(all_tickets))}\n\n' + '=' * 10 + '\n' + ans
+        ans = f'Тикеты {(page-1)*step + 1} - {min(page*step, len(all_tickets))}\n\n' + '=' * 10 + '\n' + ans
         bot.send_message(
             message.chat.id,
             ans,
