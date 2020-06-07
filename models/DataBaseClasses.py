@@ -393,7 +393,6 @@ class Ticket(Base):
         session.add(new_ticket)
         session.commit()
 
-        print(f"//FROM TICKET.CREATE: {len(client.get_all_tickets(session))}//")
         return new_ticket
 
     @staticmethod
@@ -428,23 +427,6 @@ class Message(Base):
     # Relationship
     ticket = relationship('Ticket', back_populates='messages')
     sender = relationship('User', back_populates='messages')
-
-    @staticmethod
-    def get(session, user_id: int) -> list:
-         '''
-         Получить список всеx сообщений user_id в данном ticket_id
-         В случае, если user_id не передается, метод вернет сообщения 
-         обоих пользователей.
-         '''
-
-         return session.query()
-         messages = session.query(Message).filter(
-             Message.ticket_id == ticket_id).order_by(desc(Message.date))
-
-         if user_id:
-             messages = messages.filter(Message.sender_id == user_id)
-
-         return messages.all()
 
     @staticmethod
     def add(session, body: str, ticket_id: int, sender_conversation: int) -> None:

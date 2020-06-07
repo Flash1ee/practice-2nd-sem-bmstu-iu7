@@ -504,8 +504,8 @@ def worker(message):
             bot.send_message(message.chat.id, "Закрываем клавиатуру...", reply_markup=types.ReplyKeyboardRemove())
             return
         else:
-            bot.send_message(message.chat.id, "Выберите команду из списка.", reply_markup=types.ReplyKeyboardRemove())
-            manager_answer(message)
+            bot.send_message(message.chat.id, "Вы выбрали несуществующую команду. Попробуйте снова", reply_markup=types.ReplyKeyboardRemove())
+            return
 
     elif message.user.role_id == RoleNames.MANAGER.value:
         if str(message.text) == "Посмотреть историю сообщений тикета":
@@ -523,8 +523,8 @@ def worker(message):
             bot.send_message(message.chat.id, "Закрываем клавиатуру...", reply_markup=types.ReplyKeyboardRemove())
             return
         else:
-            bot.send_message(message.chat.id, "Выберите команду из списка.", reply_markup=types.ReplyKeyboardRemove())
-            manager_answer(message)
+            bot.send_message(message.chat.id, "Вы выбрали несуществующую команду. Попробуйте снова", reply_markup=types.ReplyKeyboardRemove())
+            return
 
 
 # ответ менеджера на тикет
