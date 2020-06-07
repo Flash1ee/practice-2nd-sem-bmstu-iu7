@@ -18,7 +18,7 @@ token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
 if 'proxy' in cfg.keys():
-    apihelper.proxy = cfg['proxy']
+    apihelper.proxy = cfg['proxy_3']
 
 apihelper.ENABLE_MIDDLEWARE = True
 
@@ -471,7 +471,10 @@ def write_message(message):
     try:
         ticket_id = int(ticket_id)
     except:
-        bot.send_message(message.chat.id, "Некорректный номер тикета.")
+        if ticket_id == "Назад":
+            bot.send_message(message.chat.id, "Возвращаемся...", reply_markup = types.ReplyKeyboardRemove())
+        else:
+            bot.send_message(message.chat.id, "Некорректный номер тикета.")
         manager_answer(message)
     else:
         ticket = Ticket.get_by_id(message.session, ticket_id)
@@ -483,6 +486,8 @@ def write_message(message):
             bot.register_next_step_handler(message, append_message, ticket_id)
         else:
             bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
+        manager_answer(message)
+        
 
 
 def append_message(message, ticket_id):
@@ -493,7 +498,8 @@ def append_message(message, ticket_id):
 def worker(message):
     if message.user.role_id == RoleNames.CLIENT.value:
         if str(message.text) == "Добавить сообщение в тикет":
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Для отмена операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_back())
             bot.register_next_step_handler(message, write_message)
         elif str(message.text) == "Создать тикет":
             bot.send_message(message.chat.id, "Секундочку....", reply_markup=types.ReplyKeyboardRemove())
@@ -710,6 +716,13 @@ def keyboard_client():
     key_cancel = types.InlineKeyboardButton("Закрыть клавиатуру")
     markup.add(key_cancel)
     return markup
+
+def keyboard_back():
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    key_back = types.KeyboardButton("Назад")
+    markup.add(key_back)
+    return markup
+
 
 
 @bot.middleware_handler(update_types=['message'])
