@@ -125,7 +125,7 @@ def create_superuser(message):
 def active_ticket_list(message):
     user = message.user
     if user:
-        bot.send_message(message.chat.id, "Формирую список тикетов...")
+        message = bot.send_message(message.chat.id, "Формирую список тикетов...")
         send_active_ticket_list_paginator(message)
     else:
         bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
@@ -134,10 +134,6 @@ def active_ticket_list(message):
 @bot.callback_query_handler(func=lambda call: call.data.split('#')[0]=='active_ticket')
 def characters_page_callback(call):
     page = int(call.data.split('#')[1])
-    bot.delete_message(
-        call.message.chat.id,
-        call.message.message_id
-    )
     send_active_ticket_list_paginator(call.message, page)
 
 def send_active_ticket_list_paginator(message, page=1):
@@ -183,17 +179,21 @@ def send_active_ticket_list_paginator(message, page=1):
                 ans += '=' * 10 + '\n'
 
         ans = f'Тикеты {(page-1)*step + 1} - {min(page*step, len(all_tickets))}\n\n' + '=' * 10 + '\n' + ans
-        bot.send_message(
-            message.chat.id,
+        bot.edit_message_text(
             ans,
-            reply_markup=paginator.markup
+            message.chat.id,
+            message.message_id,
+            reply_markup=paginator.markup  
         )
     else:
         if RoleNames(user.role_id).name == 'CLIENT':
-            bot.send_message(message.chat.id,
-                "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
+            bot.edit_message_text("У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'", 
+                message.chat.id,
+                message.message_id)
         else:
-            bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
+            bot.edit_message_text("За Вами еще не закреплен ни один тикет.", 
+                message.chat.id,
+                message.message_id)
 
     session.close()
 
