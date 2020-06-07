@@ -290,7 +290,7 @@ def ticket_close(message):
         return
     ticket = Ticket.get_by_id(message.session, message.text)
     if not ticket or User.find_by_conversation(message.session, message.chat.id).id != ticket.client_id:
-        bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Команда прервана.\nПовторите попытку.")
+        bot.send_message(message.chat.id, "Введен некорректный номер тикета. Команда прервана.\nПовторите попытку.")
     elif User.find_by_id(message.session, ticket.client_id).role_id == RoleNames.ADMIN.value:
         bot.send_message(message.chat.id,
                          f"Тикет {message.text} был закрыт по решению администратора. Для уточнения информации " \
