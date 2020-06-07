@@ -731,7 +731,7 @@ def keyboard_back():
 
 
 @bot.middleware_handler(update_types=['message'])
-def session_middleware(bot_instance, message):
+def close_session_middleware(bot_instance, message):
     """
        Завершение сессии БД
     """
