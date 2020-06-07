@@ -17,7 +17,7 @@ token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
 if 'proxy' in cfg.keys():
-    apihelper.proxy = cfg['proxy']
+    apihelper.proxy = cfg['proxy_3']
 
 apihelper.ENABLE_MIDDLEWARE = True
 
@@ -227,7 +227,7 @@ def ticket_close(message):
         Обработка закрытия тикета
     """
     ticket = Ticket.get_by_id(message.session, message.text)
-    if not ticket:
+    if not ticket or User.find_by_conversation(message.session, message.chat.id).id != ticket.client_id:
         bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Команда прервана.\nПовторите попытку.")
     elif User.find_by_id(message.session, ticket.client_id).role_id == RoleNames.ADMIN.value:
         bot.send_message(message.chat.id,
@@ -235,7 +235,7 @@ def ticket_close(message):
                          "обратитесь к менеджеру.")
     elif ticket.close_date:
         bot.send_message(message.chat.id, "Тикет уже закрыт.")
-    else:
+    elif:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
         ticket.close(message.session)
 
@@ -644,7 +644,5 @@ def session_middleware(bot_instance, message):
     message.session.close()
     print("session CLOSE")
 
-
-bot.polling(none_stop=True)
 
 bot.polling(none_stop=True)
