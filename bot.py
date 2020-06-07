@@ -120,22 +120,48 @@ def create_superuser(message):
                 message.chat.id, "Не удалось авторизоваться в системе. Попробуйте еще раз.")
 
 
+from telegram_bot_pagination import InlineKeyboardPaginator
+
 # Просмотр активных тикетов.
 @bot.message_handler(commands=["ticket_list"])
 def active_ticket_list(message):
     user = message.user
     if user:
         bot.send_message(message.chat.id, "Формирую список тикетов...")
-        ans = ''
-        if RoleNames(user.role_id).name in ('CLIENT', "ADMIN"):
-            all_tickets = user.get_all_tickets(message.session)
-            all_tickets = sorted(all_tickets,
-                                 key=lambda x: x.close_date if x.close_date else datetime(year=2020, month=1, day=1))
-        else:
-            all_tickets = user.get_active_tickets(message.session)
-            all_tickets = sorted(all_tickets, key=lambda w: w.get_wait_time(message.session), reverse=True)
-        bot.send_message(message.chat.id, f"Список ваших тикетов:\nВсего: {len(all_tickets)}")
-        for i, ticket in enumerate(all_tickets, start=1):
+        send_active_ticket_list_paginator(message)
+    else:
+        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
+                                          "системе. Воспользуйтесь командой /start или /superuser_init.")
+
+@bot.callback_query_handler(func=lambda call: call.data.split('#')[0]=='active_ticket')
+def characters_page_callback(call):
+    page = int(call.data.split('#')[1])
+    bot.delete_message(
+        call.message.chat.id,
+        call.message.message_id
+    )
+    send_active_ticket_list_paginator(call.message, page)
+
+def send_active_ticket_list_paginator(message, page=1):
+    ans = ''
+    session = Session()
+    user = User.find_by_conversation(session, message.chat.id)
+    if RoleNames(user.role_id).name in ('CLIENT', "ADMIN"):
+        all_tickets = user.get_all_tickets(session)
+        all_tickets = sorted(all_tickets,
+                                key=lambda x: x.close_date if x.close_date else datetime(year=2020, month=1, day=1))
+    else:
+        all_tickets = user.get_active_tickets(session)
+        all_tickets = sorted(all_tickets, key=lambda w: w.get_wait_time(session), reverse=True)
+    step = 3
+    paginator = InlineKeyboardPaginator(
+        len(all_tickets) // step + 1,
+        current_page=page,
+        data_pattern='active_ticket#{page}'
+    )
+    for i in range((page-1)*step + 1, page*step + 1):
+        if i <= len(all_tickets):
+            ticket = all_tickets[i - 1]
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n'
             ans += "Start date: " + str(ticket.start_date) + '\n'
@@ -143,11 +169,11 @@ def active_ticket_list(message):
             if RoleNames(user.role_id).name == "ADMIN":
                 ans += 'Manager_id: ' + str(ticket.manager_id) + '\n'
                 ans += "Client_id: " + str(ticket.client_id) + '\n'
-                ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
+                ans += "Wait time: " + str(ticket.get_wait_time(session)) + "\n"
 
             if RoleNames(user.role_id).name == "MANAGER":
                 ans += "Client_id: " + str(ticket.client_id) + '\n'
-                ans += "Wait time: " + str(ticket.get_wait_time(message.session)) + "\n"
+                ans += "Wait time: " + str(ticket.get_wait_time(session)) + "\n"
 
             if RoleNames(user.role_id).name in ('CLIENT', "ADMIN"):
                 ans += 'Status: '
@@ -157,28 +183,13 @@ def active_ticket_list(message):
                     ans += 'Тикет активен. \n'
             ans += '=' * 10 + '\n'
 
-            if i % 5 == 0:
-                bot.send_message(message.chat.id, f'Тикеты {i-4} - {i}\n\n' + '=' * 10 + '\n' + ans)
-                ans = ''
-        if ans:
-            start = len(all_tickets) - len(all_tickets) % 5 + 1
-            if start != len(all_tickets):
-                ans = f'Тикеты {start} - {len(all_tickets)}\n\n' + '=' * 10 + '\n' + ans
-            else:
-                ans = f'Тикет {len(all_tickets)}\n\n' + '=' * 10 + '\n' + ans
-            bot.send_message(message.chat.id, ans)
-
-
-        if not all_tickets:
-            if RoleNames(user.role_id).name == 'CLIENT':
-                bot.send_message(message.chat.id,
-                                 "У вас нет тикетов. Для создания тикета воспользуйтесь кнопкой 'Создать тикет.'")
-            else:
-                bot.send_message(message.chat.id, "За Вами еще не закреплен ни один тикет.")
-    else:
-        bot.send_message(message.chat.id, "Для того, чтобы просмотреть список тикетов, необходимо зарегистрироваться в "
-                                          "системе. Воспользуйтесь командой /start или /superuser_init.")
-
+    ans = f'Тикеты {(page-1)*step + 1} - {min(page*step + 1, len(all_tickets))}\n\n' + '=' * 10 + '\n' + ans
+    bot.send_message(
+        message.chat.id,
+        ans,
+        reply_markup=paginator.markup
+    )
+    session.close()
 
 @bot.message_handler(commands=["ticket_id"])
 def chose_ticket(message):
