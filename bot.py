@@ -63,6 +63,7 @@ def create_superuser(message):
     """
     args = message.text.split()
     user = message.user
+    user = User.find_by_conversation(message.session,message.chat.id)
     if not user:
         bot.send_message(message.chat.id, "Сначала нужно зарегистрироваться, воспользуйтесь командой /start.")
     elif len(args) != 2:
@@ -415,49 +416,6 @@ def ticket_refuse(message):
         tick_id = args[1]
         bot.send_message(chat, "Опишите причину закрытия тикета\n")
         bot.register_next_step_handler(message, describe)
-
-
-@bot.message_handler(commands=["ticket_add"])
-def create_ticket(message):
-    """
-        Команда создания тикета клиентом
-    """
-    user = message.user
-
-    if not user:
-        bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в "
-                                          "системе. Воспользуйтесь командой /start.")
-    else:
-        if user.role_id != RoleNames.CLIENT.value:
-            bot.send_message(message.chat.id, "Создавать тикеты может только Клиент.")
-        else:
-            bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
-            bot.register_next_step_handler(message, get_title)
-
-
-def get_title(message):
-    """
-        Получение заголовка тикета
-    """
-    user = message.user
-
-    new_ticket = Ticket.create(message.session, message.text, message.chat.id)
-
-    bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
-
-    if not new_ticket:
-        bot.send_message(message.chat.id,
-                         user.name + ", извините, в системе нет ни одного менеджера. Пожалуйста, обратитесь спустя пару минут.")
-    else:
-        bot.register_next_step_handler(message, get_ticket_body, new_ticket.id)
-
-
-def get_ticket_body(message, ticket_id: int):
-    """
-        Получение описания тикета
-    """
-    Message.add(message.session, message.text, ticket_id, message.chat.id)
-    bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
 
 
 def write_message(message):
