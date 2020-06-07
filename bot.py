@@ -476,7 +476,6 @@ def write_message(message):
         else:
             bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
         manager_answer(message)
-        
 
 
 def append_message(message, ticket_id):
