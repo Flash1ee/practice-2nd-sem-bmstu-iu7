@@ -6,6 +6,7 @@ import json
 import telebot
 from telebot import apihelper
 from telebot import types
+from telegram_bot_pagination import InlineKeyboardPaginator
 
 import ClientController
 import CommonController
@@ -118,9 +119,6 @@ def create_superuser(message):
         else:
             bot.send_message(
                 message.chat.id, "Не удалось авторизоваться в системе. Попробуйте еще раз.")
-
-
-from telegram_bot_pagination import InlineKeyboardPaginator
 
 # Просмотр активных тикетов.
 @bot.message_handler(commands=["ticket_list"])
