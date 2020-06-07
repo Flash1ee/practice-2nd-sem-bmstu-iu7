@@ -542,7 +542,8 @@ def worker(message):
 
     elif message.user.role_id == RoleNames.MANAGER.value:
         if str(message.text) == "Просмотреть историю сообщений тикета":
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Для отмены операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_back())
             bot.register_next_step_handler(message, history)
 
         elif str(message.text) == "Посмотреть активные тикеты":
@@ -550,11 +551,13 @@ def worker(message):
             active_ticket_list(message)
 
         elif str(message.text) == "Выбрать тикет для ответа":
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Для отмены операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_back())
             bot.register_next_step_handler(message, get_reply_id)
 
         elif str(message.text) == "Отказаться от тикета":
-            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Для отмены операции можете воспользоваться кнопкой \"Назад\"", reply_markup = types.ReplyKeyboardRemove())
+            bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup=keyboard_back())
             bot.register_next_step_handler(message, get_refuse_id)
 
         elif str(message.text) == "Закрыть клавиатуру":
@@ -628,8 +631,12 @@ def get_reply_id(message):
     try:
         ticket_id = int(ticket_id)
     except:
-        bot.send_message(message.chat.id, "Тикет введен некорректно.")
+        if ticket_id == "Назад":
+            bot.send_message(message.chat.id, "Возвращаемся...", reply_markup = types.ReplyKeyboardRemove())
+        else:
+            bot.send_message(message.chat.id, "Тикет введен некорректно.")
         manager_answer(message)
+        return
     else:
         user = message.user
         ticket = Ticket.get_by_id(message.session, ticket_id)
@@ -640,6 +647,8 @@ def get_reply_id(message):
             bot.register_next_step_handler(message, get_reply, ticket_id)
         else:
             bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
+            manager_answer(message)
+            return
 
 
 def get_refuse_id(message):
@@ -647,17 +656,24 @@ def get_refuse_id(message):
     try:
         ticket_id = int(ticket_id)
     except:
-        bot.send_message(message.chat.id, "Тикет введен некорректно.")
+        if ticket_id == "Назад":
+            bot.send_message(message.chat.id, "Возвращаемся...", reply_markup = types.ReplyKeyboardRemove())
+        else:
+            bot.send_message(message.chat.id, "Тикет введен некорректно.")
         manager_answer(message)
-
+        return
     else:
         if not Ticket.get_all_messages(message.session, ticket_id):
-            bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
+            bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.", reply_markup = types.ReplyKeyboardRemove())
+            manager_answer(message)
+            return
         else:
             user = User.find_by_conversation(message.session, message.chat.id)
             if user.role_id != RoleNames.MANAGER.value:
                 bot.send_message(message.chat.id, f"Извините, ваша роль не позволяет воспользоваться командой, \
-                    нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(message.session, message.chat.id).role_id).name}")
+                    нужно быть manager/nВаша роль {RoleNames(User.find_by_conversation(message.session, message.chat.id).role_id).name}", reply_markup = types.ReplyKeyboardRemove())
+                manager_answer(message)
+                return
             else:
                 global tic
                 tic = ticket_id
@@ -687,33 +703,6 @@ def get_reply(message, ticket_id):
     bot.send_message(client_convers, f"Вам ответил менеджер. Ticket #{curr_ticket.id}")
     bot.send_message(message.chat.id, "Ответ отправлен.")
 
-@bot.message_handler(commands=["message"])
-def manager_answer(message):
-    """
-        ответ менеджера на тикет
-    """
-    user_role = message.user.role_id
-
-    if user_role == RoleNames.CLIENT.value:
-        bot.send_message(message.chat.id, "Что вы хотите сделать?", reply_markup=keyboard_client())
-        bot.register_next_step_handler(message, worker)
-
-    elif user_role == RoleNames.MANAGER.value:
-        bot.send_message(message.chat.id, "Что Вы хотите сделать?", reply_markup=keyboard_manager())
-        bot.register_next_step_handler(message, worker)
-
-    def keyboard_manager():
-        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-        key_history = types.KeyboardButton("Просмотреть историю сообщений тикета")
-        markup.add(key_history)
-        key_reply = types.InlineKeyboardButton("Выбрать тикет для ответа")
-        markup.add(key_reply)
-        key_show = types.InlineKeyboardButton("Посмотреть активные тикеты")
-        markup.add(key_show)
-        key_refuse = types.InlineKeyboardButton("Отказаться от тикета")
-        markup.add(key_refuse)
-        key_cancel = types.InlineKeyboardButton("Закрыть клавиатуру")
-        markup.add(key_cancel)
 
 def keyboard_manager():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
@@ -746,12 +735,25 @@ def keyboard_client():
     key_cancel = types.InlineKeyboardButton("Закрыть клавиатуру")
     markup.add(key_cancel)
     return markup
-
 def keyboard_back():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     key_back = types.KeyboardButton("Назад")
     markup.add(key_back)
     return markup
+@bot.message_handler(commands=["message"])
+def manager_answer(message):
+    """
+        ответ менеджера на тикет
+    """
+    user_role = message.user.role_id
+
+    if user_role == RoleNames.CLIENT.value:
+        bot.send_message(message.chat.id, "Что вы хотите сделать?", reply_markup=keyboard_client())
+        bot.register_next_step_handler(message, worker)
+
+    elif user_role == RoleNames.MANAGER.value:
+        bot.send_message(message.chat.id, "Что Вы хотите сделать?", reply_markup=keyboard_manager())
+        bot.register_next_step_handler(message, worker)
 
 
 
