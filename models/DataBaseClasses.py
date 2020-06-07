@@ -97,11 +97,11 @@ class User(Base):
         Все тикеты бывшего менеджера автоматически будут распределены между остальными
         '''
         his_tickets = self.get_active_tickets(session)
+        self.role_id = RoleNames.CLIENT.value
 
         for ticket in his_tickets:
             ticket.reappoint(session)
 
-        self.role_id = RoleNames.CLIENT.value
         session.commit()
 
     def get_all_tickets(self, session) -> list:
