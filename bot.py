@@ -120,7 +120,9 @@ def create_superuser(message):
 @bot.message_handler(commands=["ticket_list"])
 def active_ticket_list(message):
     user = message.user
-    print(f"FROM BOT BEFORE GET: {len(user.get_all_tickets(message.session))}")
+    user = User.find_by_conversation(message.session, message.chat.id)
+    print(user.id)
+    #print(f"FROM BOT BEFORE GET: {len(user.get_all_tickets(message.session))}")
 
     if user:
         ans = ''
@@ -478,8 +480,11 @@ def get_ticket_body(message, ticket_id: int):
     user = message.user
     Message.add(message.session, message.text, ticket_id, message.chat.id)
     bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> a6b079f23be646a59b7dcd551b25f21ae744381c
 # ответ менеджера на тикет
 @bot.message_handler(commands=["message"])
 def manager_answer(message):
@@ -489,6 +494,7 @@ def manager_answer(message):
     user_role = message.user.role_id
 
     if user_role == RoleNames.CLIENT.value:
+<<<<<<< HEAD
 
         keyboard = types.InlineKeyboardMarkup()
         key_input = types.InlineKeyboardButton(text="Добавить сообщение в тикет", callback_data="Добавить")
@@ -522,6 +528,8 @@ def manager_answer(message):
                 bot.send_message(message.chat.id, "Введите ticket_id:")
                 bot.register_next_step_handler(message, history)
 
+=======
+>>>>>>> a6b079f23be646a59b7dcd551b25f21ae744381c
         def write_message(message):
             ticket_id = message.text
             user = message.user
@@ -542,6 +550,38 @@ def manager_answer(message):
         def append_message(message, ticket_id):
             Message.add(message.session, message.text, ticket_id, message.chat.id)
             bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен менеджеру, ожидайте.")
+        '''
+        keyboard = types.InlineKeyboardMarkup()
+        key_input = types.InlineKeyboardButton(text="Добавить сообщение в тикет", callback_data="Добавить")
+        keyboard.add(key_input)
+        key_show = types.InlineKeyboardButton(text="Просмотреть историю тикета", callback_data='История')
+        keyboard.add(key_show)
+        key_list = types.InlineKeyboardButton(text="Список моих тикетов", callback_data='Список')
+        keyboard.add(key_list)
+        keyboard.row(
+            types.InlineKeyboardButton(text="Создать тикет", callback_data='Создать'),
+            types.InlineKeyboardButton(text="Удалить тикет", callback_data='Удалить')
+        )
+        '''
+        def worker(message):
+            print(message.text)
+            if str(message.text) == "Добавить сообщение в тикет":
+                bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup = types.ReplyKeyboardRemove())
+                bot.register_next_step_handler(message, write_message)
+            elif str(message.text) == "Создать тикет":
+                bot.send_message(message.chat.id, "Секундочку....", reply_markup = types.ReplyKeyboardRemove())
+                create_ticket(message)
+            elif str(message.text) == "Список моих тикетов":
+                bot.send_message(message.chat.id, "Хорошо, вывожу.", reply_markup = types.ReplyKeyboardRemove())
+                active_ticket_list(message)
+            elif str(message.text) == "Посмотреть историю тикета":
+                bot.send_message(message.chat.id, "Введите ticket_id:", reply_markup = types.ReplyKeyboardRemove())
+                bot.register_next_step_handler(message, history)
+            elif str(message.text) == "Удалить тикет":
+                bot.send_message(message.chat.id, "Секундочку...", reply_markup = types.ReplyKeyboardRemove())
+                close_ticket(message)
+        bot.send_message(message.chat.id, "Что вы хотите сделать?", reply_markup = keyboard_client())
+        bot.register_next_step_handler(message, worker)
 
     elif user_role == RoleNames.MANAGER.value:
         keyboard = types.InlineKeyboardMarkup()
@@ -626,12 +666,16 @@ def get_reply_id(message):
 
         if ticket and user_id in (ticket.client_id, ticket.manager_id):
             bot.send_message(message.chat.id, "Введите Ваш ответ:")
+<<<<<<< HEAD
 
             @bot.middleware_handler(update_types=['message'])
             def save_ticket_id(bot_instance, message):
                 message.ticket_id = ticket_id
 
             bot.register_next_step_handler(message, get_reply)
+=======
+            bot.register_next_step_handler(message, get_reply, ticket_id)
+>>>>>>> a6b079f23be646a59b7dcd551b25f21ae744381c
         else:
             bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.")
 
@@ -669,18 +713,26 @@ def describe_refuse(message):
         ticket = Ticket.get_by_id(message.session, tic)
         ticket.put_refuse_data(message.session, message.text)
         ticket.reappoint(message.session)
+<<<<<<< HEAD
         bot.send_message(message.chat.id, f"Вы отказались от тикета {tick_id}\n"
                                           "Для проверки воспользуйтесь командой /ticket_list.")
 
 
 def get_reply(message):
     curr_ticket = Ticket.get_by_id(message.session, message.ticket_id)
+=======
+        bot.send_message(message.chat.id, f"Вы отказались от тикета {tic}\n"
+        "Для проверки воспользуйтесь командой /ticket_list.")
+        
+def get_reply(message, ticket_id):
+    curr_ticket = Ticket.get_by_id(message.session, ticket_id)
+>>>>>>> a6b079f23be646a59b7dcd551b25f21ae744381c
     client_convers = User.find_by_id(message.session, curr_ticket.client_id).conversation
 
-    # client_id = message.session.query(Message).filter(Message.ticket_id == message.ticket_id).first()
+    # client_id = message.session.query(Message).filter(Message.ticket_id == ticket_id).first()
     # client = User.find_by_id(message.session, client_id.sender_id).conversation
     reply = message.text
-    Message.add(message.session, reply, message.ticket_id, message.chat.id)
+    Message.add(message.session, reply, ticket_id, message.chat.id)
     bot.send_message(client_convers, f"Вам ответил менеджер. Ticket #{curr_ticket.id}")
     bot.send_message(message.chat.id, "Ответ отправлен.")
 
@@ -705,7 +757,36 @@ def session_middleware(bot_instance, message):
        Завершение сессии БД
     """
     message.session.close()
+<<<<<<< HEAD
     print("session CLOSE")
 
+=======
+def keyboard_manager():
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    key_history = types.KeyboardButton('Просмотреть историю сообщений тикета')
+    markup.add(key_history)
+    key_reply = types.InlineKeyboardButton("Выбрать тикет для ответа")
+    markup.add(key_reply)
+    key_show = types.InlineKeyboardButton("Просмотреть активные тикеты")
+    markup.add(key_show)
+    key_refuse = types.InlineKeyboardButton("Отказаться от тикета")
+    markup.add(key_refuse)
+    return markup
 
-bot.polling(none_stop=True)
+def keyboard_client():
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    key_input = types.KeyboardButton("Добавить сообщение в тикет")
+    markup.add(key_input)
+    key_show = types.KeyboardButton("Просмотреть историю тикета")
+    markup.add(key_show)
+    key_list = types.KeyboardButton("Список моих тикетов")
+    markup.add(key_list)
+    markup.row(
+        types.KeyboardButton("Создать тикет"),
+        types.KeyboardButton("Удалить тикет")
+        )
+    return markup
+
+bot.polling(none_stop = True)
+>>>>>>> a6b079f23be646a59b7dcd551b25f21ae744381c
+
