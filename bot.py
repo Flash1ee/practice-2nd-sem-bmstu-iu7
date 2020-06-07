@@ -123,9 +123,8 @@ def active_ticket_list(message):
     #print(f"FROM BOT BEFORE GET: {len(user.get_all_tickets(message.session))}")
 
     if user:
-        ans = ''
+        ans = "Список тикетов:\n\n"
         all_tickets = user.get_all_tickets(message.session)
-
         for ticket in all_tickets:
             ans += 'Ticket id: ' + str(ticket.id) + '\n'
             ans += 'Title: ' + ticket.title + '\n'
@@ -146,8 +145,11 @@ def active_ticket_list(message):
                     ans += "Тикет закрыт.\nClose data: " + str(ticket.close_date) + '\n'
                 else:
                     ans += 'Тикет активен. \n'
-
-            ans += '\n'
+            bot.send_message(message.chat.id, ans)
+            ans = ''
+            
+        if ans == "Список тикетов:\n\n":
+            bot.send_message(message.chat.id, "Тикеты отсутствуют.")
 
         if all_tickets:
             print(f"TICKET_LIST: MESSAGE.CHAT.ID = {message.chat.id}")
@@ -208,13 +210,17 @@ def switch_for_superuser(message):
                 ans += str(ticket.manager_id) + '\n'
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
-            ans += "История переписки:\n\n"
+            bot.send_message(chat_id, ans)
             messages = ticket.get_all_messages(message.session)
+            if not messages:
+                bot.send_message(chat_id, "История переписки пустая.")
+            ans = "История переписки:\n\n"  
             for msg in messages:
                 ans += str(msg.date) + "\n"
                 role = User.find_by_id(message.session, msg.sender_id).role_id
                 ans += RoleNames(role).name + ": " + msg.body + "\n\n"
-            bot.send_message(chat_id, ans)
+                bot.send_message(chat_id, ans)
+                ans = ''
 
 
 '''
@@ -571,17 +577,17 @@ def history(message):
         if not (ticket and user_id in (ticket.client_id, ticket.manager_id)):
             bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найдено.\n")
         else:
-            ans = ''
+            ans = "История последних сообщений:\n\n"
             if len(messages) > 10:
                 messages = messages[:11]
             for m in messages:
                 ans += RoleNames(User.find_by_id(message.session, m.sender_id).role_id).name + '\n'
                 ans += "Дата: " + str(m.date) + "\n"
-                ans += "Сообщение: " + m.body + "\n\n"
+                ans += "Сообщение: " + m.body + "\n"
+                bot.send_message(chat_id, ans)
+                ans = ''
 
-            if messages:
-                bot.send_message(chat_id, "История последних сообщений:\n\n" + ans)
-            else:
+            if not messages:
                 bot.send_message(chat_id, "История сообщений пустая.")
 
 
