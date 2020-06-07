@@ -264,6 +264,14 @@ def close_ticket(message):
     """
         Закрытие тикета клиентом
     """
+    def keyboard_active_tickets():
+        tickets = message.user.get_active_tickets(message.session)
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        for ticket in tickets:
+            key = types.KeyboardButton(f"{ticket.id}: {ticket.title}")
+            markup.add(key)
+        markup.add(types.KeyboardButton("Отмена"))        
+        return markup
     if not message.user:
         bot.send_message(message.chat.id, "Для того, чтобы закрыть тикет, необходимо зарегистрироваться в " \
                                           "системе. Воспользуйтесь командой /start или /superuser_init.")
@@ -271,7 +279,7 @@ def close_ticket(message):
         bot.send_message(message.chat.id, "Данная команда не предназначена для менеджеров. Воспользуйтесь командой " \
                                           "/help, чтобы просмотреть список возможных команд.")
     else:
-        bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите закрыть.")
+        bot.send_message(message.chat.id, "Введите номер тикета, который Вы хотите закрыть.", reply_markup=keyboard_active_tickets())
         bot.register_next_step_handler(message, ticket_close)
 
 
@@ -279,6 +287,9 @@ def ticket_close(message):
     """
         Обработка закрытия тикета
     """
+    if (message.text.lower() == "отмена"):
+        return manager_answer(message)
+    
     ticket = Ticket.get_by_id(message.session, message.text)
     if not ticket or User.find_by_conversation(message.session, message.chat.id).id != ticket.client_id:
         bot.send_message(message.chat.id, "Введен некорреткный номер тикета. Команда прервана.\nПовторите попытку.")
@@ -291,6 +302,7 @@ def ticket_close(message):
     else:
         bot.send_message(message.chat.id, "Тикет успешно закрыт.")
         ticket.close(message.session)
+    manager_answer(message)
 
 
 @bot.message_handler(commands=["manager_create"])
