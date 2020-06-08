@@ -1,0 +1,102 @@
+[
+    [
+        "/start",
+        "регистр"
+    ],
+    [
+        "/debug",
+        "debug"
+    ],
+    [
+        "/debug_set_role_client",
+        "OK"
+    ],
+    [
+        "/role",
+        "Client"
+    ],
+    [
+        "/help",
+        "/help"
+    ],
+    [
+        "/ticket_add",
+        "проблему"
+    ],
+    [
+        "HELLO WORLD TESTING 1",
+        "Отлично"
+    ],
+    [
+        "THANKS 1",
+        "отправлен"
+    ],
+    [
+        "/message",
+        " "
+    ],
+    [
+        "Создать тикет",
+        "проблему"
+    ],
+    [
+        "HELLO WORLD TESTING 2",
+        "Отлично"
+    ],
+    [
+        "THANKS 2",
+        "отправлен"
+    ],
+    [
+        "/message",
+        " "
+    ],
+    [
+        "/debug_set_role_manager",
+        "OK"
+    ],
+    [
+        "/role",
+        "manager"
+    ],
+    [
+        "/help",
+        "/help"
+    ],
+    [
+        "/message",
+        " "
+    ],
+    [
+        "Посмотреть активные тикеты",
+        "Тикет"
+    ],
+    [
+        "/debug_set_role_admin",
+        "OK"
+    ],
+    [
+        "/role",
+        "admin"
+    ],
+    [
+        "/help",
+        "/help"
+    ],
+    [
+        "/manager_list",
+        " "
+    ],
+    [
+        "/manager_create",
+        "создан"
+    ],
+    [
+        "/admin_create",
+        "создан"
+    ],
+    [
+        "/ticket_list",
+        "тикет"
+    ]
+]
