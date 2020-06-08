@@ -183,8 +183,8 @@ def send_active_ticket_list_paginator(message, page=1):
                     else:
                         ans += 'Тикет активен. \n'
                 ans += '=' * 10 + '\n'
-
-        ans = f'Тикеты {(page-1)*step + 1} - {min(page*step, len(all_tickets))}\n\n' + '=' * 10 + '\n' + ans
+        time = str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) + ":" + str(datetime.datetime.now().second)
+        ans = f'Текущее время | {time}\n\nТикеты {(page-1)*step + 1} - {min(page*step, len(all_tickets))}\n\n' + "" + '=' * 10 + '\n' + ans
         bot.edit_message_text(
             ans,
             message.chat.id,
