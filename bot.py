@@ -518,6 +518,9 @@ def write_message(message):
 
 def append_message(message, ticket_id):
     Message.add(message.session, message.text, ticket_id, message.chat.id)
+    cur_manager = Ticket.get_by_id(message.session, ticket_id).manager_id
+    manager_convers = User.find_by_id(message.session,cur_manager).conversation
+    bot.send_message(manager_convers, f"Вам пришло сообщение - Ticket №{ticket_id}")
     bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен менеджеру, ожидайте.")
     manager_answer(message)
 
