@@ -96,12 +96,14 @@ class User(Base):
         '''Разжаловать менеджера до статуса клиента.
         Все тикеты бывшего менеджера автоматически будут распределены между остальными
         '''
+        if len(User.get_all_users_with_role(session, 2)) < 2:
+            print("COUNT MANAGERS IS {len(User.get_all_users_with_role(session, 2))}")
+            return -1
         his_tickets = self.get_active_tickets(session)
         self.role_id = RoleNames.CLIENT.value
-
         for ticket in his_tickets:
             ticket.reappoint(session)
-
+        
         session.commit()
 
     def get_all_tickets(self, session) -> list:

@@ -247,7 +247,7 @@ def switch_for_superuser(message):
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
             bot.send_message(chat_id, ans)
-            messages = ticket.get_all_messages(message.session)
+            messages = ticket.get_all_messages(message.session, ticket.id)
             if not messages:
                 bot.send_message(chat_id, "История переписки пустая.")
             ans = "История переписки:\n\n"
@@ -440,6 +440,18 @@ def manager_remove(message):
 
 # отказ менеджера от тикета
 
+def describe(message):
+    if not message.text:
+        bot.send_message(chat, "Описание отказа от тикета обязательно.\n \
+            Опишите причину закрытия тикета\n")
+        bot.register_next_step_handler(message, describe)
+    else:
+        global tick_id
+        ticket = Ticket.get_by_id(session,tick_id)
+        ticket.put_refuse_data(session, message.text)
+        ticket.reappoint(session)
+        bot.send_message(message.chat.id, f"Вы отказались от тикета {tick_id}\n"
+        "Для проверки воспользуйтесь командой /ticket_list")
 
 def describe(message):
     """
