@@ -247,7 +247,7 @@ def switch_for_superuser(message):
             ans += "Client_id: " + str(ticket.client_id) + '\n'
             ans += "Start date: " + str(ticket.start_date) + '\n\n'
             bot.send_message(chat_id, ans)
-            messages = ticket.get_all_messages(message.session)
+            messages = ticket.get_all_messages(message.session, ticket.id)
             if not messages:
                 bot.send_message(chat_id, "История переписки пустая.")
             ans = "История переписки:\n\n"
