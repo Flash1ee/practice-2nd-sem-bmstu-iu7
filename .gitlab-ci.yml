@@ -1,7 +1,0 @@
-stages:
-  - test
-
-build_a:
-  stage: test
-  script:
-    - echo "Test pipeline"

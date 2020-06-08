@@ -18,8 +18,8 @@ cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
-#if 'proxy' in cfg.keys():
-#    apihelper.proxy = cfg['proxy_3']
+if 'proxy' in cfg.keys():
+   apihelper.proxy = cfg['proxy']
 
 apihelper.ENABLE_MIDDLEWARE = True
 
@@ -719,7 +719,7 @@ def get_reply(message, ticket_id):
     Message.add(message.session, reply, ticket_id, message.chat.id)
     bot.send_message(client_convers, f"Вам ответил менеджер. Ticket #{curr_ticket.id}")
     bot.send_message(message.chat.id, "Ответ отправлен.", reply_markup=types.ReplyKeyboardRemove())
-    manager_answer()
+    manager_answer(message)
 
 
 
