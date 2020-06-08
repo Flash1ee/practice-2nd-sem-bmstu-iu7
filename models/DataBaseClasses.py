@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger
 from sqlalchemy import ForeignKey, desc, Text, asc
 from sqlalchemy.ext.declarative import declarative_base
@@ -344,15 +345,6 @@ class Ticket(Base):
         if new_manager is None:
             new_manager = User._get_free_manager(session, [])
             rc = 1    # подаем сигнал админу, что от этого тикета уже все отказались
-<<<<<<< HEAD
-=======
-            
-        if new_manager is None:
-            return -1
->>>>>>> 02ef473e08fef5f73ffb1b241b4c527e6cb4f6d2
-
-        self.manager_id = new_manager.id
-        session.commit()
         return rc
 
     def close(self, session):

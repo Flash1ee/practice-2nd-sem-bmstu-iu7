@@ -18,8 +18,8 @@ cfg = json.load(open("config.json"))
 token = cfg['bot']['token']
 bot = telebot.TeleBot(token)
 
-if 'proxy' in cfg.keys():
-    apihelper.proxy = cfg['proxy_3']
+#if 'proxy' in cfg.keys():
+#    apihelper.proxy = cfg['proxy_3']
 
 apihelper.ENABLE_MIDDLEWARE = True
 
@@ -199,7 +199,6 @@ def send_active_ticket_list_paginator(message, page=1):
             bot.edit_message_text("За Вами еще не закреплен ни один тикет.", 
                 message.chat.id,
                 message.message_id)
-
     session.close()
 
 @bot.message_handler(commands=["ticket_id"])
@@ -632,9 +631,11 @@ def history(message):
                 ans += "Сообщение: " + m.body + "\n"
                 bot.send_message(chat_id, ans)
                 ans = ''
+            
 
             if not messages:
                 bot.send_message(chat_id, "История сообщений пустая.")
+            manager_answer(message)
 
 
 def get_reply_id(message):
