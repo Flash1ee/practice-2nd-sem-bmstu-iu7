@@ -18,7 +18,7 @@ def init(bot):
         commands += "/start - вход в систему\n\n"
         commands += "/role - ваша роль\n\n"
         commands += "/message - вывод клавиатуры\n\n"
-        elif RoleNames(user.role_id).name == "MANAGER":
+        if RoleNames(user.role_id).name == "MANAGER":
             commands += "/superuser init <TOKEN> - регистрация в системе по идентификационному номеру(токену). Чтобы получить "\
                 "токен, обратитесь к администратору приложения.\n\n"\
                 "/manager_init <TOKEN> - Регистрация в системе.\n\n"\
