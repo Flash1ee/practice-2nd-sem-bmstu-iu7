@@ -184,7 +184,7 @@ def send_active_ticket_list_paginator(message, page=1):
                     else:
                         ans += 'Тикет активен. \n'
                 ans += '=' * 10 + '\n'
-        times = time.strftime("Обновлено %d %B в %H:%M:%C.", time.localtime())
+        times = time.strftime("Обновлено %d %B в %H:%M:%S.", time.localtime())
         ans = f'{times}\n\nТикеты {(page-1)*step + 1} - {min(page*step, len(all_tickets))}\n\n' + "" + '=' * 10 + '\n' + ans
         bot.edit_message_text(
             ans,
