@@ -98,11 +98,14 @@ class User(Base):
         '''
         his_tickets = self.get_active_tickets(session)
         self.role_id = RoleNames.CLIENT.value
-
+        flag = 0
         for ticket in his_tickets:
-            ticket.reappoint(session)
-
+            flag = ticket.reappoint(session)
+            if flag == -1:
+                break
+        
         session.commit()
+        return flag
 
     def get_all_tickets(self, session) -> list:
         
@@ -342,6 +345,8 @@ class Ticket(Base):
         if new_manager is None:
             new_manager = User._get_free_manager(session, [])
             rc = 1    # подаем сигнал админу, что от этого тикета уже все отказались
+        if new_manager is None:
+            return -1
 
         self.manager_id = new_manager.id
         session.commit()
