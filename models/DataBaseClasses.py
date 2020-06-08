@@ -198,17 +198,17 @@ class User(Base):
         for manager in all_managers:
             if manager.id in refusal_list:
                 continue
-
-            active_tickets = manager.get_active_tickets(session)
             unprocessed_tickets = Ticket.get_unprocessed_tickets(
                 session, manager.id)
+            # active_tickets = manager.get_active_tickets(session)
             lastWeekCloseTickets = Ticket.get_closed_tickets_by_time(
                 session, manager.id, 7)
             lastWeekBlockedTickets = Ticket.get_blocked_tickets_by_time(
                 session, manager.id, 7)
 
             k1 = len(unprocessed_tickets)
-            k2 = len(active_tickets)
+            k2 = session.query(Ticket).filter(Ticket.manager_id == manager.id, Ticket.close_date.is_(None)).count() 
+            # k2 = len(active_tickets)
             k3 = len(lastWeekCloseTickets) / 7
             k4 = len(lastWeekBlockedTickets) / 7
 
@@ -344,6 +344,12 @@ class Ticket(Base):
         if new_manager is None:
             new_manager = User._get_free_manager(session, [])
             rc = 1    # подаем сигнал админу, что от этого тикета уже все отказались
+<<<<<<< HEAD
+=======
+            
+        if new_manager is None:
+            return -1
+>>>>>>> 02ef473e08fef5f73ffb1b241b4c527e6cb4f6d2
 
         self.manager_id = new_manager.id
         session.commit()
