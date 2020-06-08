@@ -1,5 +1,7 @@
 from models.DataBaseClasses import *
-
+from telebot import apihelper
+from telebot import types
+from telegram_bot_pagination import InlineKeyboardPaginator
 def init(bot):
 
     @bot.message_handler(commands=["manager_list"])
@@ -49,7 +51,7 @@ def init(bot):
             global manager_id
             manager_id = args[1]
             manager = User.find_by_conversation(message.session, manager_id)
-            if not manager:
+            if not manager or manager.role_id != RoleNames.MANAGER.value:
                 bot.send_message(
                     message.chat.id, "Менеджеров с таким id не найдено в базе данных.")
             else:
@@ -67,8 +69,13 @@ def init(bot):
                     global manager_id
                     manager = User.find_by_conversation(message.session, manager_id)
                     if call.data == "yes":
-                        manager.demote_manager(message.session)
-                        bot.send_message(
+                        flag = manager.demote_manager(message.session)
+                        if flag == -1:
+                            bot.send_message(
+                            message.chat.id, f"Мы не можем удалить менеджера\n с id {manager_id}\nОн единственный =>\n"
+                            "распределить его тикеты\nнекому. ")
+                        else:
+                            bot.send_message(
                             message.chat.id, f"Менеджер с id {manager_id} удалён")
                     elif call.data == "no":
                         bot.send_message(
