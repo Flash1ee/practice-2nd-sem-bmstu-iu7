@@ -509,17 +509,17 @@ def write_message(message):
         if message.session.query(BlockedTicket).get(ticket_id):
             bot.send_message(message.chat.id, "Извините, тикет уже закрыт.")
         elif ticket and ticket.client_id == user.id:
-            bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.")
+            bot.send_message(message.chat.id, "Хорошо, введите Ваше сообщение.",reply_markup = types.ReplyKeyboardRemove())
             bot.register_next_step_handler(message, append_message, ticket_id)
         else:
             bot.send_message(message.chat.id, "Тикет не найден. Попробуйте еще раз.")
-        manager_answer(message)
+            manager_answer(message)
 
 
 def append_message(message, ticket_id):
     Message.add(message.session, message.text, ticket_id, message.chat.id)
     bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен менеджеру, ожидайте.")
-
+    manager_answer(message)
 
 def worker(message):
     if message.user.role_id == RoleNames.CLIENT.value:
@@ -713,7 +713,9 @@ def get_reply(message, ticket_id):
     reply = message.text
     Message.add(message.session, reply, ticket_id, message.chat.id)
     bot.send_message(client_convers, f"Вам ответил менеджер. Ticket #{curr_ticket.id}")
-    bot.send_message(message.chat.id, "Ответ отправлен.")
+    bot.send_message(message.chat.id, "Ответ отправлен.", reply_markup=types.ReplyKeyboardRemove())
+    manager_answer()
+
 
 
 def keyboard_manager():
