@@ -9,7 +9,7 @@ def init(bot):
         """
             Вывод сообщения помощи
         """
-        user = messag.user
+        user = message.user
         if not user:
             bot.send_message(message.chat.id, "Перед использованием /help нужно зарегистрироваться.")
             return
