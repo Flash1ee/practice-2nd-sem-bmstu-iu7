@@ -7,6 +7,7 @@ import telebot
 from telebot import apihelper
 from telebot import types
 from telegram_bot_pagination import InlineKeyboardPaginator
+import time
 
 import ClientController
 import CommonController
@@ -183,7 +184,7 @@ def send_active_ticket_list_paginator(message, page=1):
                     else:
                         ans += 'Тикет активен. \n'
                 ans += '=' * 10 + '\n'
-        time = str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) + ":" + str(datetime.datetime.now().second)
+        time = time.strftime("Today is %B %d, %Y.", time.localtime())
         ans = f'Текущее время | {time}\n\nТикеты {(page-1)*step + 1} - {min(page*step, len(all_tickets))}\n\n' + "" + '=' * 10 + '\n' + ans
         bot.edit_message_text(
             ans,
