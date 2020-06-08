@@ -66,10 +66,10 @@ def create_ticket(message):
     user = message.user
     if not user:
         bot.send_message(message.chat.id, "Для того, чтобы создать тикет, необходимо зарегистрироваться в " \
-                        "системе. Воспользуйтесь командой /start.")
+                        "системе. Воспользуйтесь командой /start.",reply_markup = types.ReplyKeyboardRemove())
     else:
         if user.role_id != RoleNames.CLIENT.value:
-            bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.")
+            bot.send_message(message.chat.id, "Комманда /ticket_add доступна только для клиентов.", reply_markup = types.ReplyKeyboardRemove())
             manager_answer(message)
         else:    
             bot.send_message(message.chat.id, user.name + ", для начала кратко сформулируйте Вашу проблему:")
@@ -83,9 +83,10 @@ def get_title(message):
         bot.send_message(message.chat.id, "Отмена операции...")
         manager_answer(message)
         return
+    bot.send_message(message.chat.id, "Ожидайте, ищем менеджера...")
     new_ticket = Ticket.create(message.session, message.text, message.chat.id)
     if not new_ticket:
-        bot.send_message(message.chat.id, user.name + ", извините, в системе нет ни одного менеджера. Пожалуйста, обратитесь спустя пару минут.")
+        bot.send_message(message.chat.id, user.name + ", извините, в системе нет ни одного менеджера. Пожалуйста, обратитесь спустя пару минут.",reply_markup = types.ReplyKeyboardRemove())
         return
     bot.send_message(message.chat.id, "Отлично. Теперь опишите Ваш вопрос более детально: ")
     bot.register_next_step_handler(message, get_ticket_body, new_ticket.id)
@@ -94,7 +95,7 @@ def get_ticket_body(message, ticket_id: int):
         Получение описания тикета
     """
     Message.add(message.session, message.text, ticket_id, message.chat.id)
-    bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.")
+    bot.send_message(message.chat.id, "Ваш вопрос успешно отправлен. В ближайшем времени с Вами свяжется менеджер.",reply_markup = types.ReplyKeyboardRemove())
 
 
 # вход в систему менеджера/админа
@@ -289,15 +290,15 @@ def ticket_close(message):
         return
     ticket = Ticket.get_by_id(message.session, message.text)
     if not ticket or User.find_by_conversation(message.session, message.chat.id).id != ticket.client_id:
-        bot.send_message(message.chat.id, "Введен некорректный номер тикета. Команда прервана.\nПовторите попытку.")
+        bot.send_message(message.chat.id, "Введен некорректный номер тикета. Команда прервана.\nПовторите попытку.",reply_markup = types.ReplyKeyboardRemove())
     elif User.find_by_id(message.session, ticket.client_id).role_id == RoleNames.ADMIN.value:
         bot.send_message(message.chat.id,
                          f"Тикет {message.text} был закрыт по решению администратора. Для уточнения информации " \
-                         "обратитесь к менеджеру.")
+                         "обратитесь к менеджеру.", reply_markup = types.ReplyKeyboardRemove())
     elif ticket.close_date:
-        bot.send_message(message.chat.id, "Тикет уже закрыт.")
+        bot.send_message(message.chat.id, "Тикет уже закрыт.", reply_markup = types.ReplyKeyboardRemove())
     else:
-        bot.send_message(message.chat.id, "Тикет успешно закрыт.")
+        bot.send_message(message.chat.id, "Тикет успешно закрыт.", reply_markup = types.ReplyKeyboardRemove())
         ticket.close(message.session)
 
 
@@ -618,7 +619,7 @@ def history(message):
         messages.reverse()
 
         if not (ticket and user_id in (ticket.client_id, ticket.manager_id)):
-            bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найдено.\n")
+            bot.send_message(message.chat.id, f"Тикет с номером {ticket_id} не найден.\n")
             manager_answer(message)
             return
         else:
@@ -634,7 +635,7 @@ def history(message):
             
 
             if not messages:
-                bot.send_message(chat_id, "История сообщений пустая.")
+                bot.send_message(chat_id, "История сообщений пустая.", reply_markup = types.ReplyKeyboardRemove())
             manager_answer(message)
 
 
